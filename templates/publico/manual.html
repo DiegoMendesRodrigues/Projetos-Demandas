@@ -1,0 +1,259 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Manual de utilização, com capturas da conta de demonstração em static/img/manual/. "Tarefa" só aparece
+    como item da lista de tarefas (seção #lista-de-tarefas), conferido por tests/test_paginas_publicas.py. #}
+{% extends "publico/base_publica.html" %}
+{% from "publico/_macros.html" import captura with context %}
+{% set title = "Manual - Projetos & Demandas" %}
+{% set secoes = [
+  ("primeiros-passos", "Primeiros passos"),
+  ("quadro", "O quadro"),
+  ("categorias", "Categorias"),
+  ("projetos", "Projetos"),
+  ("cartoes", "Tipos de cartão"),
+  ("demanda", "Demanda"),
+  ("lista-de-tarefas", "Lista de tarefas"),
+  ("generalista", "Cartão generalista"),
+  ("videos", "Vídeos"),
+  ("organizar", "Arrastar, concluir e ocultar"),
+  ("pesquisar", "Pesquisar"),
+  ("responsavel", "Responsável e histórico"),
+  ("meu-dia", "Meu Dia"),
+  ("calendario", "Calendário"),
+  ("grupos", "Grupos e compartilhamento"),
+  ("perfil", "Meu Perfil e avisos"),
+  ("foco", "Modo foco e atalhos"),
+  ("celular", "No celular e como aplicativo"),
+  ("espaco", "Plano e espaço"),
+] %}
+{% block conteudo %}
+  <section class="publico-cabecalho" aria-labelledby="manual-titulo">
+    <p class="publico-sobretitulo">Manual</p>
+    <h1 id="manual-titulo">Como usar o Projetos &amp; Demandas</h1>
+    <p class="publico-lead">Um guia direto, do primeiro acesso aos recursos de equipe. As imagens são do sistema
+      em uso: clique em qualquer uma para ver no tamanho original.</p>
+  </section>
+
+  <div class="manual">
+    <nav class="manual-indice" aria-labelledby="indice-titulo">
+      <h2 id="indice-titulo">Neste manual</h2>
+      <ol>
+        {% for ancora, rotulo in secoes %}
+          <li><a href="#{{ ancora }}">{{ rotulo }}</a></li>
+        {% endfor %}
+      </ol>
+    </nav>
+
+    <div class="manual-conteudo">
+      <section id="primeiros-passos" class="manual-secao">
+        <h2>Primeiros passos</h2>
+        <ol class="manual-passos">
+          <li>Clique em <strong>Criar conta</strong>, no menu acima, e informe o nome, o e-mail e uma senha. O telefone é opcional.</li>
+          <li>A senha precisa ter pelo menos 10 caracteres e não pode ser fácil de adivinhar. Misture palavras, números e símbolos.</li>
+          <li>Se o envio de e-mails estiver ligado, abra o link que chega na sua caixa de entrada para confirmar o endereço.</li>
+          <li>Para entrar, use <strong>Entrar</strong>, informe o e-mail, a senha e o código da imagem. Marque <strong>Lembrar de mim</strong> no seu próprio aparelho para não precisar entrar de novo por 60 dias.</li>
+        </ol>
+        <p>Esqueceu a senha? Use <strong>Esqueci minha senha</strong> na tela de entrada. Para trocar a senha depois, abra o seu ícone, no canto superior direito, e escolha <strong>Alterar a Senha</strong>.</p>
+      </section>
+
+      <section id="quadro" class="manual-secao">
+        <h2>O quadro</h2>
+        <p>É a tela principal. À esquerda fica a barra lateral, com o Meu Dia, o Calendário e as suas categorias.
+          No centro ficam os projetos da categoria aberta, cada um em uma coluna, com os cartões dentro.</p>
+        {{ captura("quadro", "Quadro da categoria Trabalho com quatro projetos e três cartões", "A categoria Trabalho, com os projetos Pendentes, Em Execução, Paradas e Concluídas.") }}
+        <ul class="manual-itens">
+          <li><strong>Todas</strong> mostra os projetos de todas as categorias de uma vez.</li>
+          <li>A seta ao lado do título Categorias recolhe a barra lateral e deixa só os ícones.</li>
+          <li>No alto do quadro ficam a pesquisa, o botão das demandas ocultas, o modo foco e o <strong>+</strong> para criar um projeto.</li>
+          <li>Com o mouse, arraste uma área livre do quadro para os lados para ver os projetos que não cabem na tela.</li>
+          <li>O sino do cabeçalho fica vermelho quando há demandas atrasadas. Clique nele e escolha uma para abri-la.</li>
+          <li>O rodapé da barra lateral mostra o seu plano e o espaço já usado pelos arquivos.</li>
+        </ul>
+      </section>
+
+      <section id="categorias" class="manual-secao">
+        <h2>Categorias</h2>
+        <p>As categorias separam os grandes assuntos: Trabalho, Pessoal, Estudos. Todo projeto pertence a uma categoria,
+          por isso crie a primeira categoria antes do primeiro projeto.</p>
+        {{ captura("categoria", "Caixa Editar categoria, com o nome, os ícones e os fundos do quadro", "Cada categoria tem um nome, um dos 24 ícones e um dos 10 fundos para o quadro.") }}
+        <ul class="manual-itens">
+          <li>Para criar, clique no <strong>+</strong> ao lado do título Categorias.</li>
+          <li>Para alterar, clique no lápis ao lado da categoria. O fundo escolhido aparece no quadro sempre que ela está aberta.</li>
+          <li>A lixeira só fica ativa quando a categoria não tem projetos.</li>
+        </ul>
+      </section>
+
+      <section id="projetos" class="manual-secao">
+        <h2>Projetos</h2>
+        <p>Os projetos são as colunas do quadro. Você pode usá-los como etapas (Pendentes, Em Execução, Concluídas)
+          ou como frentes de trabalho (Cliente A, Cliente B).</p>
+        {{ captura("projeto", "Caixa Editar projeto, com o nome, a categoria, a cor e a opção Projeto concluído", "Nome, categoria, uma das 12 cores e a opção Projeto concluído.") }}
+        <ul class="manual-itens">
+          <li>Crie pelo <strong>+</strong> azul, no alto do quadro, e altere pelo lápis do cabeçalho do projeto.</li>
+          <li>Mude a ordem arrastando o projeto pela alça (os seis pontinhos) à esquerda do nome.</li>
+          <li>Marque <strong>Projeto concluído</strong> num projeto como Concluídas: os cartões dele deixam de gerar alertas de atraso.</li>
+          <li>A lixeira só fica ativa quando o projeto não tem cartões, inclusive os ocultos.</li>
+        </ul>
+      </section>
+
+      <section id="cartoes" class="manual-secao">
+        <h2>Tipos de cartão</h2>
+        <p>O <strong>+</strong> no cabeçalho de cada projeto abre o menu de criação, com quatro tipos de cartão.</p>
+        {{ captura("menu-criar", "Menu de criação aberto no projeto Pendentes, com os quatro tipos de cartão", "Generalista, Demanda, Lista de Tarefas e Vídeo.") }}
+        <dl class="manual-definicoes">
+          <dt>Generalista</dt><dd>Você escolhe as seções do cartão: arquivos, descrição, checklist e vídeo.</dd>
+          <dt>Demanda</dt><dd>O cartão clássico, com descrição formatada e arquivos.</dd>
+          <dt>Lista de Tarefas</dt><dd>Um checklist com itens que se marcam, se reordenam e mostram o progresso.</dd>
+          <dt>Vídeo</dt><dd>Um vídeo do YouTube ou do Vimeo, com os dados e o player.</dd>
+        </dl>
+      </section>
+
+      <section id="demanda" class="manual-secao">
+        <h2>Demanda</h2>
+        <p>Clique em um cartão para abrir a caixa dele. À esquerda ficam os dados; à direita, a descrição.</p>
+        {{ captura("demanda", "Caixa Editar demanda, com os campos à esquerda e o editor da descrição à direita") }}
+        <ul class="manual-itens">
+          <li><strong>Nome</strong>, <strong>Prioridade</strong> (Baixa, Média ou Alta, que dá a cor da borda do cartão) e <strong>Previsão de Execução</strong>, com data e hora.</li>
+          <li><strong>Local da demanda</strong>: onde ela acontece, como Escritório ou Casa.</li>
+          <li><strong>Marcações</strong>: digite e aperte ENTER para cada uma. Elas aparecem no cartão e entram na pesquisa.</li>
+          <li><strong>Arquivos</strong>: até 3 por cartão. O download é feito pela caixa, e o lápis renomeia o arquivo.</li>
+          <li><strong>Descrição</strong>: negrito, itálico, sublinhado, tamanhos, recuos, cores, links e imagens. O botão de tela cheia amplia o editor, e o do livro mostra o texto como ele vai ficar.</li>
+        </ul>
+        <p class="manual-dica">Cartão vencido fica com a data em vermelho até ser concluído.</p>
+      </section>
+
+      <section id="lista-de-tarefas" class="manual-secao">
+        <h2>Lista de tarefas</h2>
+        <p>Ideal para compras, checklists e passos de um processo. No lugar da descrição, a caixa traz as tarefas.</p>
+        {{ captura("lista-de-tarefas", "Caixa da lista de tarefas Mercado, com os itens marcados e desmarcados") }}
+        <ul class="manual-itens">
+          <li>Clique em <strong>Adicionar tarefa</strong> e escreva cada item. Marque as que já foram feitas: elas ficam riscadas. A lixeira, à direita, remove a tarefa.</li>
+          <li>Arraste uma tarefa para mudar a ordem. No celular, use a alça à esquerda.</li>
+          <li>O botão ao lado do título Tarefas coloca tudo em ordem alfabética.</li>
+          <li>No quadro, o cartão mostra a barra de progresso e as 3 primeiras tarefas.</li>
+          <li>Quando todas as tarefas são marcadas, a lista é concluída sozinha ao salvar.</li>
+        </ul>
+      </section>
+
+      <section id="generalista" class="manual-secao">
+        <h2>Cartão generalista</h2>
+        <p>Começa com os campos da demanda (nome, prioridade, previsão, local e marcações). Em
+          <strong>Adicionar ao cartão</strong>, você acrescenta as seções de que precisa.</p>
+        {{ captura("generalista", "Cartão generalista com a descrição, o checklist e o vídeo em abas", "Descrição, checklist e vídeo ficam em abas, à direita.") }}
+        <ul class="manual-itens">
+          <li>Retire uma seção pelo <strong>×</strong>. Ao salvar, o conteúdo dela é apagado.</li>
+          <li>A seção Arquivos só sai depois que os arquivos forem excluídos.</li>
+          <li>No quadro, o cartão mostra a descrição, o progresso do checklist e o vídeo em tamanho reduzido.</li>
+        </ul>
+      </section>
+
+      <section id="videos" class="manual-secao">
+        <h2>Vídeos</h2>
+        <p>Escolha <strong>Cartão - Vídeo</strong>, cole o endereço de um vídeo do YouTube ou do Vimeo e clique em
+          <strong>Receber Informações</strong>. O título, o autor, a duração, a data de publicação e a descrição vêm sozinhos.</p>
+        {{ captura("video", "Caixa do vídeo, com os dados à esquerda e o player à direita") }}
+        <ul class="manual-itens">
+          <li>Só as <strong>Informações Adicionais</strong> e as marcações são suas: use-as para anotar o que importa no vídeo.</li>
+          <li><strong>Atualizar as informações</strong> busca de novo o título, a descrição e a duração.</li>
+          <li>O botão <strong>Simplificar</strong> do cartão deixa a miniatura menor, com o título ao lado.</li>
+        </ul>
+        {{ captura("quadro-videos", "Quadro da categoria Videoteca com cartões de vídeo", "A categoria Videoteca, com os vídeos organizados por assunto.") }}
+      </section>
+
+      <section id="organizar" class="manual-secao">
+        <h2>Arrastar, concluir e ocultar</h2>
+        <ul class="manual-itens">
+          <li><strong>Arrastar:</strong> pegue o cartão e solte em outro projeto ou em outra posição. No celular, use a alça (os seis pontinhos).</li>
+          <li><strong>Concluir:</strong> o ícone de visto do cartão marca a demanda como concluída e a tira do quadro. Ela deixa de gerar alertas.</li>
+          <li><strong>Ocultar:</strong> o ícone do olho cortado esconde o cartão sem concluí-lo.</li>
+          <li><strong>Exibir as ocultas:</strong> o botão do olho, no alto do quadro, mostra de novo os cartões ocultos e concluídos. Clique outra vez no ícone do cartão para trazê-lo de volta.</li>
+          <li><strong>Excluir:</strong> a lixeira apaga o cartão, os arquivos e o histórico, depois de uma confirmação.</li>
+        </ul>
+      </section>
+
+      <section id="pesquisar" class="manual-secao">
+        <h2>Pesquisar</h2>
+        <p>Clique na lupa, digite o termo e aperte ENTER. A pesquisa olha o nome, o local, a descrição, as marcações,
+          os itens dos checklists e os dados dos vídeos, sem diferenciar maiúsculas nem acentos.</p>
+        {{ captura("pesquisa", "Quadro filtrado pela pesquisa fornecedores", "Só os cartões encontrados ficam no quadro. O × encerra a pesquisa.") }}
+      </section>
+
+      <section id="responsavel" class="manual-secao">
+        <h2>Responsável e histórico</h2>
+        <p>No canto do cartão aparece o ícone do proprietário (quem é dono do projeto). O ícone com o sinal de mais, ao lado,
+          escolhe um <strong>responsável</strong> entre as pessoas com acesso à categoria.</p>
+        <p>O botão <strong>Histórico</strong>, na caixa do cartão, mostra quem criou, alterou, moveu, concluiu ou trocou o responsável,
+          e recebe comentários de quem pode editar.</p>
+        {{ captura("historico", "Caixa Histórico aberta sobre a demanda Verificar os Fornecedores, com o campo de comentário") }}
+      </section>
+
+      <section id="meu-dia" class="manual-secao">
+        <h2>Meu Dia</h2>
+        <p>O primeiro item da barra lateral. Reúne, de todas as categorias, as demandas atrasadas, as de hoje, as de amanhã e as dos próximos 7 dias,
+          inclusive aquelas em que você é o responsável. Clique em uma para abri-la no quadro.</p>
+        {{ captura("meu-dia", "Página Meu Dia com as demandas agrupadas por dia") }}
+      </section>
+
+      <section id="calendario" class="manual-secao">
+        <h2>Calendário</h2>
+        <p>Mostra os cartões com previsão no mês ou na semana. Use as setas para navegar e <strong>Hoje</strong> para voltar.
+          Arraste um cartão para outro dia: a data muda e o horário continua o mesmo.</p>
+        {{ captura("calendario", "Calendário do mês de novembro com as demandas nos dias") }}
+        {{ captura("calendario-semana", "Calendário na visão por semana", "A visão por semana dá mais espaço para cada dia.") }}
+      </section>
+
+      <section id="grupos" class="manual-secao">
+        <h2>Grupos e compartilhamento</h2>
+        <p>O ícone de pessoas, no cabeçalho, abre os <strong>Grupos</strong>. Crie um grupo, escolha o ícone, a cor e quem pode entrar,
+          e adicione os membros pelo e-mail completo.</p>
+        {{ captura("grupos", "Página Grupos com os grupos Criar POCs - Segurança e Família", altura=380) }}
+        <p>Com a categoria aberta, o botão <strong>Compartilhar</strong>, no alto do quadro, libera a categoria para os seus grupos:</p>
+        <ul class="manual-itens">
+          <li><strong>Visualização:</strong> os membros veem os cartões, mas não alteram nada.</li>
+          <li><strong>Edição:</strong> os membros criam, alteram, movem, concluem e ocultam cartões e enviam arquivos.
+            Excluir cartões e mexer nos projetos continua só com você.</li>
+        </ul>
+        {{ captura("compartilhar", "Tela de compartilhamento da categoria Pessoal") }}
+        <p>Quem recebe a categoria a encontra em <strong>Compartilhadas comigo</strong>, na barra lateral. As mudanças de cada pessoa aparecem no quadro das outras sem recarregar a página.</p>
+      </section>
+
+      <section id="perfil" class="manual-secao">
+        <h2>Meu Perfil e avisos</h2>
+        <p>Abra o seu ícone, no canto superior direito, e escolha <strong>Meu Perfil</strong>.</p>
+        {{ captura("perfil", "Página Meu Perfil com o resumo da semana, os dados, a cor da aplicação, o ícone e a automação", altura=770) }}
+        <ul class="manual-itens">
+          <li><strong>Resumo da semana:</strong> concluídas nesta semana e na anterior, atrasadas e previstas para 7 dias.</li>
+          <li><strong>Cor da Aplicação:</strong> Azul, Cinza, Laranja, Verde ou Vermelho. A cor muda na hora e fica gravada ao salvar.</li>
+          <li><strong>Ícone:</strong> escolha um dos desenhos ou use <strong>Enviar minha foto</strong>, ajuste o enquadramento e confirme.</li>
+          <li><strong>Automação:</strong> defina quem recebe os avisos por e-mail (só você ou também o responsável) e com quantos dias de antecedência.</li>
+        </ul>
+      </section>
+
+      <section id="foco" class="manual-secao">
+        <h2>Modo foco e atalhos</h2>
+        <p>O botão de tela cheia, no alto do quadro, liga o <strong>modo foco</strong>: só os projetos ficam na tela. O Esc desliga.
+          Aperte <kbd>?</kbd> para ver todos os atalhos do teclado.</p>
+        {{ captura("atalhos", "Caixa Atalhos do teclado") }}
+      </section>
+
+      <section id="celular" class="manual-secao">
+        <h2>No celular e como aplicativo</h2>
+        <p>No celular, as categorias viram uma faixa no alto, e as caixas ocupam a tela inteira. Para arrastar um cartão, use a alça.</p>
+        <div class="manual-celulares">
+          {{ captura("celular-quadro", "Quadro no celular", "O quadro.", celular=True) }}
+          {{ captura("celular-meu-dia", "Meu Dia no celular", "O Meu Dia.", celular=True) }}
+          {{ captura("celular-demanda", "Caixa da demanda no celular", "A caixa da demanda.", celular=True) }}
+        </div>
+        <p>Para instalar como aplicativo, abra o seu ícone e escolha <strong>Instalar o aplicativo</strong> (quando o navegador permitir),
+          ou use a opção <strong>Adicionar à tela inicial</strong> do navegador. O aplicativo traz atalhos para o Meu Dia e o Calendário.</p>
+      </section>
+
+      <section id="espaco" class="manual-secao">
+        <h2>Plano e espaço</h2>
+        <p>Cada conta tem um plano, com o espaço para os arquivos e a quantidade de categorias, projetos e cartões.
+          Os ocultos e os concluídos também contam. Veja os detalhes em <a href="{{ url_for('publico.planos') }}">Planos</a>.</p>
+        <p>Ficou alguma dúvida? Fale com a gente pelo <a href="{{ url_for('publico.atendimento') }}">Atendimento</a>.</p>
+      </section>
+    </div>
+  </div>
+{% endblock %}

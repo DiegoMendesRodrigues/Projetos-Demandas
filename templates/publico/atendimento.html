@@ -1,0 +1,50 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Formulário de contato: o e-mail sai com a configuração de Administração > Configurações, para o próprio
+    endereço de envio (enviar_atendimento). O campo "site" é uma armadilha para robôs, escondida das pessoas. #}
+{% extends "publico/base_publica.html" %}
+{% from "_icones.html" import concluido, lupa, sino, usuarios %}
+{% set title = "Atendimento - Projetos & Demandas" %}
+{% macro campo(campo_do_form) -%}
+  <div class="atendimento-campo">
+    {{ campo_do_form.label() }}{% if campo_do_form.flags.required %}<span class="campo-obrigatorio" aria-hidden="true"> *</span>{% endif %}
+    {{ campo_do_form(**kwargs) }}
+    {% for erro in campo_do_form.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+  </div>
+{%- endmacro %}
+{% block conteudo %}
+  <div class="atendimento">
+    <section class="atendimento-texto" aria-labelledby="atendimento-titulo">
+      <p class="publico-sobretitulo">Atendimento</p>
+      <h1 id="atendimento-titulo">Estamos por perto. Pode chamar!</h1>
+      <p class="publico-lead">A equipe do Projetos &amp; Demandas acompanha de perto como o sistema está sendo usado,
+        para deixá-lo cada vez mais simples e útil no seu dia a dia.</p>
+      <p>Ficou com uma dúvida, quer uma dica para organizar melhor o seu quadro, encontrou algo estranho ou teve
+        aquela ideia genial de recurso? Conta pra gente. Toda mensagem é lida por uma pessoa de verdade, e a resposta
+        chega no e-mail que você informar.</p>
+      <ul class="atendimento-motivos">
+        <li><span class="publico-recurso-icone">{{ lupa() }}</span><div><strong>Dúvidas de uso</strong><span>Como fazer, onde fica, qual o melhor jeito.</span></div></li>
+        <li><span class="publico-recurso-icone">{{ usuarios() }}</span><div><strong>Planos e contas</strong><span>Mudança de plano, espaço e acesso.</span></div></li>
+        <li><span class="publico-recurso-icone">{{ sino() }}</span><div><strong>Sugestões e problemas</strong><span>O que podemos melhorar ou corrigir.</span></div></li>
+      </ul>
+      <p class="publico-nota">Antes de escrever, vale dar uma olhada no <a href="{{ url_for('publico.manual') }}">Manual</a>: muita coisa já está explicada lá, com imagens.</p>
+    </section>
+
+    <section class="atendimento-formulario" aria-labelledby="formulario-titulo">
+      <h2 id="formulario-titulo">Envie sua mensagem</h2>
+      <p class="atendimento-legenda">Os campos com * são obrigatórios.</p>
+      <form method="post" action="{{ url_for('publico.atendimento') }}" novalidate>
+        {{ form.csrf_token }}
+        {{ campo(form.nome, autocomplete="name", maxlength=120, required=True) }}
+        {{ campo(form.email, autocomplete="email", maxlength=255, required=True) }}
+        {{ campo(form.telefone, autocomplete="tel", maxlength=15, inputmode="tel", placeholder="(00) 00000-0000", **{"data-mascara-telefone": ""}) }}
+        {{ campo(form.mensagem, rows=7, maxlength=5000, required=True, placeholder="Conte como podemos ajudar") }}
+        <div class="atendimento-armadilha" aria-hidden="true">
+          <label for="site">Não preencha este campo</label>
+          {{ form.site(id="site", tabindex="-1", autocomplete="off") }}
+        </div>
+        <button class="botao botao-primario botao-grande" type="submit">{{ concluido() }}Enviar mensagem</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}

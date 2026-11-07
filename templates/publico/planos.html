@@ -1,0 +1,89 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- A tabela vem sempre dos planos cadastrados em Administração > Planos de Usuários (linhas_dos_planos). #}
+{% extends "publico/base_publica.html" %}
+{% from "_icones.html" import clipe, concluido, etiqueta %}
+{% from "publico/_macros.html" import chamada_da_conta with context %}
+{% set title = "Planos - Projetos & Demandas" %}
+{% block conteudo %}
+  <section class="publico-cabecalho" aria-labelledby="planos-titulo">
+    <p class="publico-sobretitulo">Planos</p>
+    <h1 id="planos-titulo">Um plano para cada momento</h1>
+    <p class="publico-lead">Todo mundo começa com um plano completo, com todos os recursos do sistema.
+      O que muda de um plano para o outro é o espaço para os arquivos e quantos itens você pode criar.
+      Quando o seu quadro crescer, o plano cresce junto.</p>
+  </section>
+
+  <section class="publico-secao" aria-labelledby="tabela-titulo">
+    <h2 id="tabela-titulo" class="publico-titulo-tabela">{{ etiqueta() }}Compare os planos</h2>
+    {% if planos %}
+      <div class="tabela-rolagem publico-planos">
+        <table class="tabela tabela-planos">
+          <thead>
+            <tr>
+              <th scope="col">Plano</th>
+              <th scope="col">Espaço para arquivos</th>
+              {% for coluna in colunas %}<th scope="col">{{ coluna }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for plano in planos %}
+              <tr{% if plano.padrao %} class="plano-padrao"{% endif %}>
+                <td>
+                  <span class="plano-nome">{{ plano.nome }}</span>
+                  {% if plano.padrao %}<span class="plano-selo">Plano inicial</span>{% endif %}
+                </td>
+                <td data-rotulo="Espaço para arquivos">{{ plano.armazenamento_mb }} MB</td>
+                {% for rotulo, valor in plano.limites %}
+                  <td data-rotulo="{{ rotulo }}">{% if valor is none %}<span class="plano-ilimitado">Ilimitado</span>{% else %}{{ valor }}{% endif %}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% for plano in planos if plano.padrao %}
+        <p class="publico-nota">Toda conta nova começa no plano <strong>{{ plano.nome }}</strong>.</p>
+      {% endfor %}
+    {% else %}
+      <p class="publico-nota">Os planos estão sendo atualizados. Fale com a nossa equipe pelo Atendimento.</p>
+    {% endif %}
+  </section>
+
+  <section class="publico-secao" aria-labelledby="todos-os-planos-titulo">
+    <h2 id="todos-os-planos-titulo">Incluído em todos os planos</h2>
+    <ul class="publico-lista-check publico-colunas-check">
+      <li>{{ concluido() }}Quadros com categorias, projetos e cartões</li>
+      <li>{{ concluido() }}Demandas, listas de tarefas, vídeos e cartão generalista</li>
+      <li>{{ concluido() }}Meu Dia, Calendário e Pesquisa</li>
+      <li>{{ concluido() }}Alertas de atraso e avisos por e-mail</li>
+      <li>{{ concluido() }}Grupos e compartilhamento de categorias</li>
+      <li>{{ concluido() }}Responsável, histórico e comentários nos cartões</li>
+      <li>{{ concluido() }}Aplicativo instalável no celular e no computador</li>
+      <li>{{ concluido() }}Cinco cores para a interface e fundos para o quadro</li>
+    </ul>
+  </section>
+
+  <section class="publico-secao publico-perguntas" aria-labelledby="perguntas-planos-titulo">
+    <h2 id="perguntas-planos-titulo">Perguntas rápidas</h2>
+    <dl>
+      <dt>{{ clipe() }}O que entra no espaço para arquivos?</dt>
+      <dd>Os arquivos anexados aos cartões e as imagens da descrição. O espaço em uso aparece no rodapé da barra lateral e na caixa de cada demanda.</dd>
+      <dt>{{ clipe() }}Os cartões ocultos e concluídos contam no limite?</dt>
+      <dd>Sim. Eles continuam guardados na sua conta e podem voltar ao quadro a qualquer momento.</dd>
+      <dt>{{ clipe() }}E nas categorias compartilhadas?</dt>
+      <dd>Vale o plano de quem é o dono da categoria. Os arquivos enviados por quem edita ocupam o espaço do dono.</dd>
+      <dt>{{ clipe() }}Como mudo de plano?</dt>
+      <dd>Fale com a nossa equipe pelo <a href="{{ url_for('publico.atendimento') }}">Atendimento</a>. Se o novo plano for menor, nada é apagado: só a criação de novos itens fica limitada.</dd>
+    </dl>
+  </section>
+
+  <section class="publico-final" aria-labelledby="planos-final-titulo">
+    <h2 id="planos-final-titulo">Comece agora, sem compromisso</h2>
+    <p>Crie sua conta, monte o primeiro quadro e veja como fica mais leve acompanhar tudo.</p>
+    <div class="publico-chamadas">
+      {{ chamada_da_conta() }}
+      <a class="botao botao-grande" href="{{ url_for('publico.manual') }}">Ler o Manual</a>
+    </div>
+  </section>
+{% endblock %}

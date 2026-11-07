@@ -20,7 +20,7 @@
 </head>
 <body>
   <header class="topo">
-    <a class="marca" href="{{ url_for('principal.quadro') }}" data-dica="Ir para a página inicial">
+    <a class="marca" href="{{ url_for('principal.quadro') if current_user.is_authenticated else url_for('publico.apresentacao') }}" data-dica="Ir para a página inicial">
       <img class="marca-logo" src="{{ estatico('img/icone_cabecalho.png') }}" alt="" width="87" height="60">
       <span class="marca-nome">Projetos <span class="marca-e">&amp;</span> Demandas</span>
     </a>
@@ -74,6 +74,7 @@
       </div>
     {% endif %}
   </header>
+  {%- block navegacao %}{% endblock %}
 
   <main>
     {% block main %}{% endblock %}

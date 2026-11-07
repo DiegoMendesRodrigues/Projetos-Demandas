@@ -1,0 +1,20 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Menu da área externa, abaixo do cabeçalho: as páginas públicas e, à direita, a entrada no sistema. #}
+<nav class="navegacao-publica" aria-label="Navegação do site">
+  <div class="navegacao-publica-conteudo">
+    <ul class="navegacao-publica-itens">
+      {% for endpoint, rotulo in menu_publico %}
+        <li><a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>{{ rotulo }}</a></li>
+      {% endfor %}
+    </ul>
+    <div class="navegacao-publica-conta">
+      {% if current_user.is_authenticated %}
+        <a class="botao botao-primario" href="{{ url_for('principal.quadro') }}">Ir para o quadro</a>
+      {% else %}
+        {% if request.endpoint != 'security.login' %}<a class="botao" href="{{ url_for_security('login') }}">Entrar</a>{% endif %}
+        {% if security.registerable and request.endpoint != 'security.register' %}<a class="botao botao-primario" href="{{ url_for_security('register') }}">Criar conta</a>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</nav>

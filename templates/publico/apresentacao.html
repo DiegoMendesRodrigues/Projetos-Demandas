@@ -1,0 +1,150 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "publico/base_publica.html" %}
+{% from "_icones.html" import compartilhar, concluido, icone_categoria, instalar, lupa, sino, sol, video %}
+{% from "publico/_macros.html" import captura, chamada_da_conta with context %}
+{% set title = "Projetos & Demandas" %}
+{% block conteudo %}
+  <section class="publico-destaque" aria-labelledby="apresentacao-titulo">
+    <div class="publico-destaque-texto">
+      <p class="publico-sobretitulo">Gestão de projetos e demandas, sem complicação</p>
+      <h1 id="apresentacao-titulo">Tudo o que você precisa fazer, num quadro só.</h1>
+      <p class="publico-lead">Sabe aquela sensação de ter mil coisas na cabeça e nenhuma no lugar? O Projetos &amp; Demandas
+        reúne o seu trabalho e a sua vida pessoal em quadros visuais: você enxerga o que está pendente,
+        o que está andando e o que já foi resolvido. Arrasta, conclui e segue em frente.</p>
+      <div class="publico-chamadas">
+        {{ chamada_da_conta() }}
+        <a class="botao botao-grande" href="{{ url_for('publico.planos') }}">Conhecer os planos</a>
+      </div>
+      <ul class="publico-selos">
+        <li>{{ concluido() }}No computador e no celular</li>
+        <li>{{ concluido() }}Sem instalar nada</li>
+        <li>{{ concluido() }}Em português, do começo ao fim</li>
+      </ul>
+    </div>
+    {{ captura("quadro", "Quadro da categoria Trabalho, com os projetos Pendentes, Em Execução, Paradas e Concluídas") }}
+  </section>
+
+  <section class="publico-secao" aria-labelledby="como-funciona-titulo">
+    <h2 id="como-funciona-titulo">Como funciona</h2>
+    <p class="publico-secao-intro">Três ideias simples, que você entende em um minuto.</p>
+    <ol class="publico-passos">
+      <li>
+        <span class="publico-passo-numero" aria-hidden="true">1</span>
+        <h3>Categorias</h3>
+        <p>Separe os assuntos da sua vida: Trabalho, Pessoal, Estudos, Videoteca. Cada categoria ganha um ícone e um fundo próprio.</p>
+      </li>
+      <li>
+        <span class="publico-passo-numero" aria-hidden="true">2</span>
+        <h3>Projetos</h3>
+        <p>Dentro de cada categoria, os projetos são as colunas do quadro: Pendentes, Em Execução, Concluídas ou o que fizer sentido para você.</p>
+      </li>
+      <li>
+        <span class="publico-passo-numero" aria-hidden="true">3</span>
+        <h3>Cartões</h3>
+        <p>Cada demanda vira um cartão, com prazo, prioridade, descrição, arquivos e marcações. É só arrastar de um projeto para o outro.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="publico-secao" aria-labelledby="recursos-titulo">
+    <h2 id="recursos-titulo">O que dá para fazer</h2>
+    <p class="publico-secao-intro">Recursos pensados para o dia a dia de quem tem muito a fazer e pouco tempo a perder.</p>
+    <ul class="publico-recursos">
+      <li>
+        <span class="publico-recurso-icone">{{ icone_categoria('trabalho') }}</span>
+        <h3>Cartões do seu jeito</h3>
+        <p>Demandas, listas de tarefas, vídeos e o cartão generalista, em que você escolhe as seções: descrição, arquivos, checklist e vídeo.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ sol() }}</span>
+        <h3>Meu Dia</h3>
+        <p>Uma página com o que está atrasado e o que vence hoje, amanhã e nos próximos dias, de todas as categorias.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ icone_categoria('calendario') }}</span>
+        <h3>Calendário</h3>
+        <p>Veja o mês ou a semana e arraste um cartão para outro dia quando os planos mudarem.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ sino() }}</span>
+        <h3>Alertas e avisos por e-mail</h3>
+        <p>O sino do cabeçalho mostra as demandas atrasadas, e o sistema avisa por e-mail antes do vencimento.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ compartilhar() }}</span>
+        <h3>Trabalho em equipe</h3>
+        <p>Crie grupos, compartilhe categorias para visualização ou edição e escolha um responsável para cada cartão.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ lupa() }}</span>
+        <h3>Pesquisa e marcações</h3>
+        <p>Encontre qualquer cartão pelo nome, pelo local, pela descrição, pelas marcações ou pelos dados de um vídeo.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ video() }}</span>
+        <h3>Vídeos do YouTube e do Vimeo</h3>
+        <p>Guarde os vídeos que você quer assistir ou consultar, com título, autor, duração e o player ao lado.</p>
+      </li>
+      <li>
+        <span class="publico-recurso-icone">{{ instalar() }}</span>
+        <h3>Aplicativo no celular</h3>
+        <p>Instale o sistema como aplicativo, com atalhos para o Meu Dia e o Calendário na tela inicial.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="publico-secao publico-alternado" aria-labelledby="cartoes-titulo">
+    <div class="publico-alternado-texto">
+      <h2 id="cartoes-titulo">Um cartão para cada tipo de trabalho</h2>
+      <p>Uma reunião, uma compra, o checklist da viagem ou aquele vídeo que você quer rever com calma: cada coisa
+        tem o seu cartão. No cartão generalista, você monta o conteúdo com as seções de que precisa, em abas.</p>
+      <ul class="publico-lista-check">
+        <li>{{ concluido() }}Descrição com texto formatado, links e imagens</li>
+        <li>{{ concluido() }}Até 3 arquivos anexados em cada cartão</li>
+        <li>{{ concluido() }}Histórico de quem criou, alterou, moveu ou concluiu</li>
+      </ul>
+    </div>
+    {{ captura("generalista", "Cartão generalista Feriado em Novembro, com a descrição, o checklist e o vídeo em abas") }}
+  </section>
+
+  <section class="publico-secao publico-alternado publico-alternado-invertido" aria-labelledby="dia-titulo">
+    <div class="publico-alternado-texto">
+      <h2 id="dia-titulo">Comece o dia sabendo por onde ir</h2>
+      <p>O Meu Dia separa o que está atrasado, o que é para hoje e o que vem por aí. Sem procurar coluna por coluna,
+        sem surpresa no fim da tarde. E, quando a agenda apertar, o Calendário deixa você remarcar com um arrasto.</p>
+      <p><a href="{{ url_for('publico.manual') }}#meu-dia">Veja como usar o Meu Dia no Manual</a></p>
+    </div>
+    {{ captura("meu-dia", "Página Meu Dia, com as demandas agrupadas em Hoje, Amanhã e Próximos dias") }}
+  </section>
+
+  <section class="publico-secao publico-alternado" aria-labelledby="equipe-titulo">
+    <div class="publico-alternado-texto">
+      <h2 id="equipe-titulo">Sozinho ou em equipe</h2>
+      <p>Compartilhe uma categoria com a família, com o time do escritório ou com aquele parceiro de projeto.
+        Você decide quem só acompanha e quem pode editar, e as mudanças aparecem no quadro de todos sem recarregar a página.</p>
+    </div>
+    {{ captura("compartilhar", "Tela de compartilhamento da categoria Pessoal com o grupo Família") }}
+  </section>
+
+  <section class="publico-secao" aria-labelledby="ganhos-titulo">
+    <h2 id="ganhos-titulo">O que você ganha</h2>
+    <ul class="publico-ganhos">
+      <li><strong>Clareza.</strong> Tudo à vista, no lugar certo, com a prioridade e o prazo de cada demanda.</li>
+      <li><strong>Menos esquecimentos.</strong> Alertas no cabeçalho e avisos por e-mail antes de o prazo vencer.</li>
+      <li><strong>Foco.</strong> O modo foco tira o resto da tela, e os atalhos do teclado poupam cliques.</li>
+      <li><strong>Colaboração sem ruído.</strong> Cada pessoa sabe o que é dela, e o histórico conta o que aconteceu.</li>
+      <li><strong>Liberdade.</strong> Use no computador, no tablet ou no celular, de onde estiver.</li>
+      <li><strong>Privacidade.</strong> Cada conta vê só o que é seu e o que foi compartilhado com ela.</li>
+    </ul>
+  </section>
+
+  <section class="publico-final" aria-labelledby="final-titulo">
+    <h2 id="final-titulo">Pronto para colocar a casa em ordem?</h2>
+    <p>Crie sua conta em poucos segundos e monte o primeiro quadro hoje mesmo.</p>
+    <div class="publico-chamadas">
+      {{ chamada_da_conta() }}
+      <a class="botao botao-grande" href="{{ url_for('publico.atendimento') }}">Falar com a equipe</a>
+    </div>
+  </section>
+{% endblock %}

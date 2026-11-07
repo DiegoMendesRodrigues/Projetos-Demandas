@@ -123,6 +123,8 @@ LIMITES = {
     # Adicionar Membros diz se o e-mail informado tem conta.
     "principal.adicionar_membros": ({"GET"}, 30, HORA, "usuario"),
     "principal.adicionar_membro": ({"POST"}, 60, HORA, "usuario"),
+    # Sem login, cada mensagem do Atendimento sai como um e-mail.
+    "publico.atendimento": ({"POST"}, 5, HORA, "ip"),
 }
 # Senhas erradas por conta, vindas de qualquer IP. Contam só as tentativas que passaram pelo
 # CAPTCHA (a senha só é conferida com o código certo): sem resolvê-lo, ninguém bloqueia a conta

@@ -111,6 +111,45 @@ def campo_telefone():
     )
 
 
+TAMANHO_DA_MENSAGEM_DE_ATENDIMENTO = 5000
+
+
+class AtendimentoForm(FlaskForm):
+    """Formulário da página Atendimento, aberto a qualquer visitante. Só o telefone é opcional."""
+
+    nome = StringField(
+        "Nome",
+        filters=[lambda valor: valor.strip() if valor else valor],
+        validators=[
+            DataRequired("Informe seu nome."),
+            Length(max=120, message="O nome deve ter no máximo 120 caracteres."),
+        ],
+    )
+    email = EmailField(
+        "E-mail",
+        filters=[lambda valor: valor.strip() if valor else valor],
+        validators=[
+            DataRequired("Informe seu e-mail."),
+            Length(max=255, message="O e-mail deve ter no máximo 255 caracteres."),
+            Email("Informe um e-mail válido."),
+        ],
+    )
+    telefone = campo_telefone()
+    mensagem = TextAreaField(
+        "Mensagem",
+        filters=[lambda valor: valor.strip() if valor else valor],
+        validators=[
+            DataRequired("Escreva a sua mensagem."),
+            Length(
+                max=TAMANHO_DA_MENSAGEM_DE_ATENDIMENTO,
+                message="A mensagem deve ter no máximo {} caracteres.".format(TAMANHO_DA_MENSAGEM_DE_ATENDIMENTO),
+            ),
+        ],
+    )
+    # Escondido das pessoas (CSS e aria-hidden): os robôs que preenchem todos os campos o revelam.
+    site = StringField("Site")
+
+
 class PerfilForm(FlaskForm):
     nome = campo_nome_completo()
     telefone = campo_telefone()

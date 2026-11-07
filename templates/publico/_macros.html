@@ -1,0 +1,24 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Captura de tela do sistema (static/img/manual/<nome>.webp), numa moldura de janela. O link abre a
+    imagem no tamanho original. #}
+{% macro captura(nome, descricao, legenda=None, celular=False, altura=820) -%}
+  {%- set largura, altura = (585, 1266) if celular else (1366, altura) -%}
+  <figure class="captura{% if celular %} captura-celular{% endif %}">
+    <a class="captura-moldura" href="{{ url_for('static', filename='img/manual/' ~ nome ~ '.webp') }}" target="_blank" rel="noopener" aria-label="Ampliar: {{ descricao }}">
+      <img src="{{ url_for('static', filename='img/manual/' ~ nome ~ '.webp') }}" alt="{{ descricao }}" width="{{ largura }}" height="{{ altura }}" loading="lazy" decoding="async">
+    </a>
+    {%- if legenda %}<figcaption>{{ legenda }}</figcaption>{% endif %}
+  </figure>
+{%- endmacro %}
+
+{#- Chamada para entrar ou criar a conta, conforme o visitante. #}
+{% macro chamada_da_conta() -%}
+  {%- if current_user.is_authenticated %}
+    <a class="botao botao-primario botao-grande" href="{{ url_for('principal.quadro') }}">Ir para o quadro</a>
+  {%- elif security.registerable %}
+    <a class="botao botao-primario botao-grande" href="{{ url_for_security('register') }}">Criar minha conta</a>
+  {%- else %}
+    <a class="botao botao-primario botao-grande" href="{{ url_for_security('login') }}">Entrar</a>
+  {%- endif %}
+{%- endmacro %}

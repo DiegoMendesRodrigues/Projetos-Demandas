@@ -1,0 +1,21 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Base das páginas da área externa: o menu de navegação abaixo do cabeçalho e o rodapé com os mesmos links. #}
+{% extends "base.html" %}
+{% block navegacao %}{% include "_navegacao_publica.html" %}{% endblock %}
+{% block main %}
+  <div class="publico">
+    {% block conteudo %}{% endblock %}
+  </div>
+  <footer class="publico-rodape">
+    <div class="publico-rodape-conteudo">
+      <p class="publico-rodape-marca">Projetos <span class="marca-e">&amp;</span> Demandas</p>
+      <ul>
+        {% for endpoint, rotulo in menu_publico %}
+          <li><a href="{{ url_for(endpoint) }}">{{ rotulo }}</a></li>
+        {% endfor %}
+      </ul>
+      <p class="publico-rodape-texto">Solução on-line para a gestão de projetos e demandas.</p>
+    </div>
+  </footer>
+{% endblock %}

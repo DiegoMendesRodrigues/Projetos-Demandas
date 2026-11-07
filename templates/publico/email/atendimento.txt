@@ -1,0 +1,12 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+Nova mensagem recebida pela página Atendimento do Projetos & Demandas.
+
+Nome: {{ nome }}
+E-mail: {{ email }}
+Telefone: {{ telefone or "não informado" }}
+
+Mensagem:
+{{ mensagem }}
+
+Para responder, use o botão Responder: a resposta vai para o e-mail do visitante.

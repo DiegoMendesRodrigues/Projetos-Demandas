@@ -39,6 +39,7 @@ from models import (
     rotulo_em_megabytes,
 )
 from avisos import iniciar_avisos
+from paginas_publicas import publico
 from banco import preparar_motor
 from comandos_do_banco import banco, concluir_banco_antigo, preparar_banco
 from routes import (
@@ -478,6 +479,7 @@ def create_app(config=Config):
     registrar_protecoes(app)
 
     app.register_blueprint(principal)
+    app.register_blueprint(publico)
     app.cli.add_command(banco)
     app.add_template_filter(rotulo_de_tamanho, "tamanho")
     app.add_template_filter(rotulo_em_megabytes, "megabytes")
