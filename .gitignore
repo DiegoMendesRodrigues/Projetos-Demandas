@@ -1,17 +1,53 @@
+# Ambiente virtual e arquivos gerados pelo Python
 .venv/
+venv/
 __pycache__/
 *.py[cod]
-.pytest_cache/
+*.egg-info/
+build/
+dist/
 
-database/segredos.json
+# Testes e ferramentas de análise
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Dados de cada instalação: o banco SQLite tem as contas e os cartões dos usuários,
+# e o segredos.json, as chaves da aplicação. Nenhum deles entra no repositório.
+database/*
+!database/.gitkeep
 userfiles/*
 !userfiles/.gitkeep
-CLAUDE.md
 
-# O banco SQLite tem os dados dos usuários: não entra no repositório.
-database/*.db
-database/*.db-wal
-database/*.db-shm
-database/*.db-journal
-# Permissões locais do Claude Code, de cada máquina.
+# Configurações e senhas do ambiente (arquivo de ambiente do serviço, senhas do banco)
+.env
+.env.*
+*.env
+*.senha
+*.pem
+*.key
+
+# Cópias de segurança e arquivos compactados
+*.bak
+*.dump
+*.gpg
+*.zip
+*.tar.gz
+
+# Registros
+*.log
+
+# Editores e sistemas operacionais
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code: as orientações e as permissões locais ficam em cada máquina
+CLAUDE.md
 .claude/settings.local.json

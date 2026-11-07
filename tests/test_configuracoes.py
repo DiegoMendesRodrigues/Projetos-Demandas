@@ -64,7 +64,7 @@ def test_formulario_tem_os_campos_e_as_opcoes(administrador):
     assert 'value="sim">Sim' in html and 'value="nao">Não' in html
     assert html.count('maxlength="200"') == 5
     assert 'type="password"' in html
-    acoes = html.split('class="formulario-acoes"')[1].split("</div>")[0]
+    acoes = html.split('class="perfil-acoes"')[1].split("</div>")[0]
     assert ">Cancelar</a>" in acoes and ">Salvar</button>" in acoes
 
 
@@ -175,3 +175,16 @@ def test_configuracoes_salvas_valem_ao_reiniciar(app, administrador):
 
     assert reiniciada.extensions["mail"].server == "smtp.salvo.com"
     assert reiniciada.extensions["mail"].port == 2525
+
+
+def test_configuracoes_em_duas_colunas_com_o_banco_acima_dos_botoes(administrador):
+    html = administrador.get("/administracao/configuracoes").get_data(as_text=True)
+    formulario = html.split('<form action="/administracao/configuracoes"')[1].split("</form>")[0]
+
+    assert 'class="cartao-central perfil perfil-largo configuracoes"' in html
+    colunas = formulario.split('<div class="perfil-colunas">')[1].split('<section class="configuracoes-banco"')[0]
+    assert colunas.count('<div class="perfil-coluna">') == 2
+    esquerda, direita = colunas.split('<div class="perfil-coluna">')[1:]
+    assert 'id="servidor"' in esquerda and 'id="usuario"' in esquerda
+    assert 'id="senha"' in direita and 'id="nome_envio"' in direita
+    assert formulario.index("Banco de dados") < formulario.index('class="perfil-acoes"')

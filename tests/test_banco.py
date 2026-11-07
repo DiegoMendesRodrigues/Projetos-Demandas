@@ -609,7 +609,7 @@ def test_configuracoes_mostram_o_banco_em_uso(cliente):
 
     html = cliente.get("/administracao/configuracoes").get_data(as_text=True)
 
-    secao = html.split('<h2 class="subtitulo">Banco de dados</h2>')[1]
+    secao = html.split('<h2 class="subtitulo" id="banco-titulo">Banco de dados</h2>')[1]
     assert "<dt>Banco</dt>" in secao and "variáveis BANCO_*" in secao
 
 

@@ -3288,10 +3288,33 @@ kbd {
   margin: 0 0 12px;
 }
 
+/* Configurações: os campos do e-mail em duas colunas (as de .perfil-colunas) e, abaixo deles e
+   acima dos botões, o banco de dados, separado por uma linha. */
+.configuracoes-banco {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--borda);
+}
+
+.configuracoes-banco .subtitulo {
+  margin-top: 0;
+}
+
+.configuracoes .perfil-acoes {
+  margin-top: 24px;
+}
+
 .banco-em-uso {
   display: grid;
-  gap: 6px;
-  margin: 0 0 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 32px;
+  margin: 8px 0;
+}
+
+@media (max-width: 760px) {
+  .banco-em-uso {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .banco-em-uso > div {

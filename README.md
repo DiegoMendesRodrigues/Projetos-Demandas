@@ -37,11 +37,17 @@ Com o sistema, é possível:
 ## Tecnologias Utilizadas
 
 - **Linguagens:** Python 3.13, HTML5, CSS3 e JavaScript.
-- **Framework web:** Flask.
-- **Banco de dados:** SQLite3 com Flask-SQLAlchemy.
-- **Autenticação e segurança:** Flask-Login, Flask-Security-Too, nh3 e captcha.
-- **Formulários:** Flask-WTF.
+- **Framework web:** Flask, com os modelos Jinja2 e o Werkzeug.
+- **Banco de dados:** SQLite3 (padrão), MariaDB, MySQL, PostgreSQL, Oracle ou Microsoft SQL Server, com SQLAlchemy, Flask-SQLAlchemy e as migrações do Alembic.
+- **Drivers dos bancos:** PyMySQL (MariaDB e MySQL), psycopg (PostgreSQL), python-oracledb (Oracle) e pyodbc com o Microsoft ODBC Driver (SQL Server).
+- **Autenticação e segurança:** Flask-Login, Flask-Security-Too (senhas com Argon2), zxcvbn (força da senha), nh3 (limpeza do HTML da descrição), cryptography (senha do e-mail cifrada) e captcha (CAPTCHA de imagem gerado no próprio servidor).
+- **Formulários:** Flask-WTF, WTForms e email-validator.
 - **E-mails:** Flask-Mail.
+- **Idioma e fuso horário:** Flask-Babel e tzdata (horário de São Paulo).
+- **Imagens:** Pillow (foto do perfil e CAPTCHA).
+- **Interface:** JavaScript puro, sem frameworks, com Pointer Events (arrastar no computador e no celular), Canvas (ajuste da foto do perfil), Service Worker e Web App Manifest (aplicativo instalável, PWA).
+- **Vídeos:** páginas públicas do YouTube e o oEmbed do Vimeo, sem chave de API.
+- **Produção:** Gunicorn, Nginx com HTTPS (Certbot ou certificado próprio), systemd e cópias de segurança cifradas com o GnuPG, no Debian 13.
 - **Testes:** pytest.
 
 ## Como Instalar
