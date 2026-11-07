@@ -1,0 +1,15 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+Olá, {{ user.nome or user.email }}!
+
+Alguém (talvez você) tentou criar uma conta com este e-mail, que já está cadastrado no Projetos & Demandas.
+{% if reset_link %}
+Se esqueceu a senha, crie uma nova pelo endereço abaixo:
+{{ reset_link }}
+{% endif %}{% if confirmation_link %}
+Você ainda não confirmou o seu e-mail. Confirme pelo endereço abaixo:
+{{ confirmation_link }}
+{% endif %}
+Se não foi você, ignore esta mensagem.
+
+Projetos & Demandas

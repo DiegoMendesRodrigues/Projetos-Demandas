@@ -1,0 +1,7 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+<p>Olá, {{ user.nome or user.email }}!</p>
+<p>Recebemos um pedido para criar uma nova senha para a sua conta no Projetos &amp; Demandas.</p>
+<p><a href="{{ reset_link }}">Clique aqui</a> para criar a nova senha.</p>
+<p>Este link vale por {{ config.SECURITY_RESET_PASSWORD_WITHIN|duracao }}. Se você não fez este pedido, ignore esta mensagem: a sua senha continua a mesma.</p>
+<p>Projetos &amp; Demandas</p>

@@ -1,0 +1,94 @@
+{% from "_icones.html" import ajustes, avatar, icone_do_usuario, chave, engrenagem, etiqueta, icone_categoria, instalar, pessoa, sair, sino, usuarios -%}
+<!DOCTYPE html>
+<!-- Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -->
+<!-- Desenvolvido por Diego Mendes Rodrigues -->
+<html lang="pt-BR" data-tema="{{ tema }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{{ title|default('Projetos & Demandas') }}{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="48x48">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-32.png') }}" sizes="32x32">
+  {#- Aplicativo instalável: o app.js troca a theme-color pela cor do cabeçalho do tema escolhido. #}
+  <link rel="manifest" href="{{ url_for('principal.manifesto') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <meta name="theme-color" content="#0b3f91">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Projetos">
+  <link rel="stylesheet" href="{{ estatico('css/style.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="{{ url_for('principal.quadro') }}" data-dica="Ir para a página inicial">
+      <img class="marca-logo" src="{{ estatico('img/icone_cabecalho.png') }}" alt="" width="87" height="60">
+      <span class="marca-nome">Projetos <span class="marca-e">&amp;</span> Demandas</span>
+    </a>
+    {% if current_user.is_authenticated %}
+      <div class="topo-acoes">
+        <div class="menu">
+          {% if tarefas_atrasadas %}
+            {% set total_atrasadas = tarefas_atrasadas|length %}
+            {% set dica_alertas = '1 demanda atrasada' if total_atrasadas == 1 else total_atrasadas ~ ' demandas atrasadas' %}
+            <button class="botao-topo botao-alertas" type="button" data-menu-gatilho aria-controls="menu-alertas" aria-expanded="false" aria-haspopup="true" aria-label="{{ dica_alertas }}" data-dica="{{ dica_alertas }}">
+              {{ sino() }}
+              <span class="alertas-contador" aria-hidden="true">{{ total_atrasadas }}</span>
+            </button>
+            <div class="menu-caixa menu-alertas" id="menu-alertas" hidden>
+              {% for tarefa in tarefas_atrasadas %}
+                <a class="menu-item" href="{{ url_for('principal.quadro', tarefa=tarefa.id, categoria=request.args.get('categoria') if tarefa.projeto.usuario_id == current_user.id else tarefa.projeto.categoria_id) }}">{% if tarefa.projeto.categoria %}{{ icone_categoria(tarefa.projeto.categoria.icone) }}{% endif %}<span>{{ tarefa.previsao_execucao.strftime('%d/%m/%Y %H:%M') }} - {{ tarefa.nome }}</span></a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <button class="botao-topo" type="button" disabled aria-label="Nenhuma demanda atrasada" data-dica="Nenhuma demanda atrasada">{{ sino() }}</button>
+          {% endif %}
+        </div>
+        <a class="botao-topo" href="{{ url_for('principal.grupos') }}" aria-label="Grupos" data-dica="Grupos">{{ usuarios() }}</a>
+        {% if current_user.administrador %}
+        <div class="menu">
+          <button class="botao-topo" type="button" data-menu-gatilho aria-controls="menu-administracao" aria-expanded="false" aria-haspopup="true" aria-label="Administração" data-dica="Administração">
+            {{ engrenagem() }}
+          </button>
+          <div class="menu-caixa" id="menu-administracao" hidden>
+            <a class="menu-item" href="{{ url_for('principal.usuarios') }}">{{ usuarios() }}Usuários</a>
+            <a class="menu-item" href="{{ url_for('principal.planos') }}">{{ etiqueta() }}Planos de Usuários</a>
+            <a class="menu-item" href="{{ url_for('principal.configuracoes') }}">{{ ajustes() }}Configurações</a>
+          </div>
+        </div>
+        {% endif %}
+        <div class="menu">
+          <button class="botao-topo botao-usuario" type="button" data-menu-gatilho aria-controls="menu-usuario" aria-expanded="false" aria-haspopup="true"
+                  aria-label="Menu de {{ current_user.nome or current_user.email }}" data-dica="{{ current_user.nome or current_user.email }}">
+            {{ icone_do_usuario(current_user) }}
+          </button>
+          <div class="menu-caixa" id="menu-usuario" hidden>
+            <a class="menu-item" href="{{ url_for('principal.perfil') }}">{{ pessoa() }}Meu Perfil</a>
+            <a class="menu-item" href="{{ url_for_security('change_password') }}">{{ chave() }}Alterar a Senha</a>
+            <button class="menu-item" type="button" data-instalar-app hidden>{{ instalar() }}Instalar o aplicativo</button>
+            <form action="{{ url_for_security('logout') }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="menu-item" type="submit">{{ sair() }}Sair</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </header>
+
+  <main>
+    {% block main %}{% endblock %}
+  </main>
+
+  <dialog id="notificacao" class="dialogo notificacao" aria-labelledby="notificacao-titulo">
+    <h2 id="notificacao-titulo">Notificação</h2>
+    <div data-notificacao-texto>
+      {% for categoria, mensagem in get_flashed_messages(with_categories=True) if categoria != 'silenciosa' %}
+        <p>{{ mensagem }}</p>
+      {% endfor %}
+    </div>
+    <button class="botao botao-primario" type="button" data-notificacao-ok>Ok</button>
+  </dialog>
+
+  <script src="{{ estatico('js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+Olá, {{ user.nome or user.email }}!
+
+A senha da sua conta no Projetos & Demandas foi redefinida.
+Se não foi você, entre em contato com o administrador do sistema.
+
+Projetos & Demandas

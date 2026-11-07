@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+database/segredos.json
+userfiles/*
+!userfiles/.gitkeep
+CLAUDE.md
+
+# O banco SQLite tem os dados dos usuários: não entra no repositório.
+database/*.db
+database/*.db-wal
+database/*.db-shm
+database/*.db-journal
+# Permissões locais do Claude Code, de cada máquina.
+.claude/settings.local.json

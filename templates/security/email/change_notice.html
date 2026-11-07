@@ -1,0 +1,8 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+<p>Olá, {{ user.nome or user.email }}!</p>
+<p>A senha da sua conta no Projetos &amp; Demandas foi alterada.</p>
+{% if security.recoverable %}
+  <p>Se não foi você, <a href="{{ url_for_security('forgot_password', _external=True) }}">clique aqui</a> para criar uma nova senha.</p>
+{% endif %}
+<p>Projetos &amp; Demandas</p>

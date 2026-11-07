@@ -1,0 +1,15 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% if not _fs_is_user_authenticated(current_user) %}
+  <nav class="menu-conta" aria-label="Opções da conta">
+    {% if not skip_login_menu and request.endpoint != 'security.login' %}
+      <a href="{{ url_for_security('login') }}{%- if 'next' in request.args -%}?next={{ request.args.next|urlencode }}{%- endif -%}">Entrar</a>
+    {% endif %}
+    {% if security.registerable and request.endpoint != 'security.register' %}
+      <a href="{{ url_for_security('register') }}{%- if 'next' in request.args -%}?next={{ request.args.next|urlencode }}{%- endif -%}">Criar conta</a>
+    {% endif %}
+    {% if security.recoverable %}
+      <a href="{{ url_for_security('forgot_password') }}">Esqueci minha senha</a>
+    {% endif %}
+  </nav>
+{% endif %}

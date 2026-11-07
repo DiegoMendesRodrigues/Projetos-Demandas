@@ -1,0 +1,3 @@
+# Driver do MySQL (BANCO_TIPO=mysql): pip install -r requirements-mysql.txt
+-r requirements.txt
+PyMySQL>=1.1,<2

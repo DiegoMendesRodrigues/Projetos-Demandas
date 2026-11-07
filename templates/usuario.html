@@ -1,0 +1,38 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% set titulo = 'Editar usuário' if usuario else 'Novo usuário' %}
+{% block title %}{{ titulo }} - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central perfil">
+    <h1>{{ titulo }}</h1>
+    <form action="{{ url_for('principal.editar_usuario', usuario_id=usuario.id) if usuario else url_for('principal.criar_usuario') }}" method="post" autocomplete="off">
+      {{ form.hidden_tag() }}
+      <label for="nome">{{ form.nome.label.text }}</label>
+      {{ form.nome(required=True, maxlength=120, autocomplete='off') }}
+      {% for erro in form.nome.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="email">{{ form.email.label.text }}</label>
+      {{ form.email(required=True, maxlength=255, autocomplete='off') }}
+      {% for erro in form.email.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="telefone">{{ form.telefone.label.text }}</label>
+      {{ form.telefone(maxlength=15, placeholder='(00) 00000-0000', inputmode='tel', autocomplete='off', **{'data-mascara-telefone': ''}) }}
+      {% for erro in form.telefone.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      {% if 'senha' in form %}
+        <label for="senha">{{ form.senha.label.text }}</label>
+        {{ form.senha(required=True, minlength=8, maxlength=128, autocomplete='new-password') }}
+        {% for erro in form.senha.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      {% endif %}
+      <label for="administrador">{{ form.administrador.label.text }}</label>
+      {{ form.administrador() }}
+      {% for erro in form.administrador.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="plano_id">{{ form.plano_id.label.text }}</label>
+      {{ form.plano_id(required=True) }}
+      {% for erro in form.plano_id.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <div class="formulario-acoes">
+        <a class="botao" href="{{ url_for('principal.usuarios') }}">Cancelar</a>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </div>
+  {% include "_ver_senha.html" %}
+{% endblock %}

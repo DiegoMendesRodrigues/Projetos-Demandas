@@ -1,0 +1,55 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import icone_do_usuario, lixeira %}
+{% set e_administrador = grupo.administrado_por(current_user) %}
+{% block title %}Membros de {{ grupo.nome }} - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central usuarios">
+    <div class="usuarios-topo">
+      <h1><span class="grupo-nome" style="color: {{ grupo.cor }}">{{ icone_grupo(grupo.icone) }}<span class="grupo-nome-texto">{{ grupo.nome }}</span></span></h1>
+      <a class="botao" href="{{ url_for('principal.grupos') }}">Voltar</a>
+    </div>
+    {% if grupo.descricao %}<p class="grupo-descricao">{{ grupo.descricao }}</p>{% endif %}
+    <p class="subtitulo">Administrador do grupo (quem o criou): {{ grupo.administrador.nome or grupo.administrador.email }}</p>
+    <div class="tabela-rolagem">
+      <table class="tabela">
+        <thead>
+          <tr><th scope="col">Nome</th><th scope="col">E-mail</th>{% if e_administrador %}<th scope="col" aria-label="Ações"></th>{% endif %}</tr>
+        </thead>
+        <tbody>
+          {% for membro in membros %}
+            <tr>
+              <td><span class="membro-nome"><span class="membro-icone">{{ icone_do_usuario(membro) }}</span>{{ membro.nome }}</span></td>
+              <td data-rotulo="E-mail">{{ membro.email }}</td>
+              {% if e_administrador %}
+                <td class="tabela-acoes">
+                  {% set e_o_administrador = membro.id == grupo.administrador_id %}
+                  <button class="botao-icone botao-excluir" type="button" data-excluir
+                          data-url-excluir="{{ url_for('principal.excluir_membro', grupo_id=grupo.id, usuario_id=membro.id) }}"
+                          aria-label="Excluir {{ membro.nome or membro.email }} do grupo"
+                          data-dica="{{ 'O administrador não pode ser excluído' if e_o_administrador else 'Excluir do grupo' }}"
+                          {{ 'disabled' if e_o_administrador }}>{{ lixeira() }}</button>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if e_administrador %}
+  <dialog id="confirmacao" class="dialogo notificacao" aria-labelledby="confirmacao-titulo">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2 id="confirmacao-titulo">Confirmação</h2>
+      <p>Confirma a exclusão deste membro do grupo? Ele deixa de ver as categorias compartilhadas com o grupo.</p>
+      <div class="confirmacao-acoes">
+        <button class="botao botao-primario" type="submit">Sim</button>
+        <button class="botao" type="button" data-fechar autofocus>Não</button>
+      </div>
+    </form>
+  </dialog>
+  {% endif %}
+{% endblock %}

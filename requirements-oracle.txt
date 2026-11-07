@@ -1,0 +1,3 @@
+# Driver do Oracle (BANCO_TIPO=oracle), no modo thin, sem o Oracle Client: pip install -r requirements-oracle.txt
+-r requirements.txt
+oracledb>=2.5,<4

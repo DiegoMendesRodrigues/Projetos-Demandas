@@ -1,0 +1,15 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+<p>Olá, {{ pessoa.nome or pessoa.email }}!</p>
+{% if tipo == 'atrasado' %}
+<p>A demanda <strong>“{{ tarefa.nome }}”</strong> não foi concluída até a Previsão de Execução, {{ tarefa.previsao_execucao.strftime('%d/%m/%Y às %H:%M') }}.</p>
+{% else %}
+<p>A demanda <strong>“{{ tarefa.nome }}”</strong> vence em {{ tarefa.previsao_execucao.strftime('%d/%m/%Y às %H:%M') }}.</p>
+{% endif %}
+<p>
+  Projeto: {{ tarefa.projeto.nome }}{% if tarefa.projeto.categoria %} ({{ tarefa.projeto.categoria.nome }}){% endif %}<br>
+  Proprietário: {{ tarefa.proprietario.nome or tarefa.proprietario.email }}
+  {%- if tarefa.responsavel_atual %}<br>
+  Responsável: {{ tarefa.responsavel_atual.nome or tarefa.responsavel_atual.email }}{% endif %}
+</p>
+<p>Este aviso foi enviado pela Automação do Projetos &amp; Demandas, configurada no Meu Perfil de {{ tarefa.proprietario.nome or tarefa.proprietario.email }}.</p>

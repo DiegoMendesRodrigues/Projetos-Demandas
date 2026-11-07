@@ -1,0 +1,3 @@
+# Driver do PostgreSQL (BANCO_TIPO=postgresql): pip install -r requirements-postgresql.txt
+-r requirements.txt
+psycopg[binary]>=3.2,<4

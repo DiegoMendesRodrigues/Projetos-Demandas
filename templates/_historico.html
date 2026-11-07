@@ -1,0 +1,32 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{# O conteúdo da caixa Histórico, buscado por app.js ao abri-la e depois de cada comentário. -#}
+{% from "_icones.html" import icone_do_usuario %}
+<p class="historico-nome">{{ tarefa.nome }}</p>
+{% if pode_comentar %}
+  <form class="historico-comentar" data-comentar data-url="{{ url_for('principal.comentar_tarefa', tarefa_id=tarefa.id) }}">
+    <label for="historico-texto">Comentário</label>
+    <textarea id="historico-texto" rows="3" maxlength="{{ tamanho_do_comentario }}" required
+              placeholder="Escreva um comentário para quem acompanha o cartão"></textarea>
+    <button class="botao botao-primario" type="submit">Comentar</button>
+  </form>
+{% endif %}
+{% if tarefa.eventos %}
+  <ol class="historico">
+    {% for evento in tarefa.eventos %}
+      <li class="historico-item{{ ' historico-comentario' if evento.tipo == 'comentario' }}">
+        {% if evento.usuario %}{{ icone_do_usuario(evento.usuario) }}{% else %}<span class="historico-sem-conta" aria-hidden="true"></span>{% endif %}
+        <div>
+          <p class="historico-linha">
+            <strong>{{ (evento.usuario.nome or evento.usuario.email) if evento.usuario else 'Conta excluída' }}</strong>
+            {{ evento.descricao }}
+            <time datetime="{{ evento.momento.isoformat() }}">{{ evento.momento.strftime('%d/%m/%Y às %H:%M') }}</time>
+          </p>
+          {% if evento.tipo == 'comentario' %}<p class="historico-texto">{{ evento.texto }}</p>{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ol>
+{% else %}
+  <p class="historico-vazio">Nada registrado ainda. As próximas alterações, conclusões e comentários aparecem aqui.</p>
+{% endif %}

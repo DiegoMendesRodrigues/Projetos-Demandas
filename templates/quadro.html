@@ -1,0 +1,821 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import caneta, clipe, compartilhar, video, concluida, concluido, etiqueta, icone_categoria, icone_editor, lixeira, mais, marcador, olho, olho_cortado, simplificar, expandir, lupa, fechar, icone_do_usuario, adicionar_pessoa, ilustracao_vazia, sol %}
+{# Os formulários devolvem ao quadro na mesma categoria e com a mesma pesquisa. -#}
+{% macro campos_de_volta() -%}
+  {% if categoria_selecionada %}<input type="hidden" name="categoria" value="{{ categoria_selecionada.id }}">{% endif %}
+  {% if busca %}<input type="hidden" name="busca" value="{{ busca }}">{% endif %}
+{%- endmacro %}
+{% block title %}Quadro - Projetos &amp; Demandas{% endblock %}
+{# Na categoria compartilhada, permissao vale editar ou visualizar; no restante, dono. -#}
+{% set pode_editar = permissao in ('dono', 'editar') %}
+
+{% macro dados_da_tarefa(tarefa) -%}
+data-url="{{ url_for('principal.editar_video' if tarefa.e_video else 'principal.editar_tarefa', tarefa_id=tarefa.id) }}"
+                       data-tarefa-id="{{ tarefa.id }}"
+                       data-url-historico="{{ url_for('principal.ver_historico', tarefa_id=tarefa.id) }}"
+                       data-url-mover="{{ url_for('principal.mover_tarefa', tarefa_id=tarefa.id) }}"
+                       data-nome="{{ tarefa.nome }}"
+                       data-prioridade="{{ tarefa.prioridade }}"
+                       data-previsao="{{ tarefa.previsao_execucao.strftime('%Y-%m-%dT%H:%M') if tarefa.previsao_execucao else '' }}"
+                       data-descricao="{{ tarefa.descricao }}"
+                       data-local="{{ tarefa.local }}"
+                       data-projeto-id="{{ tarefa.projeto_id }}"
+                       data-tipo="{{ tarefa.tipo }}"
+                       data-itens='{{ tarefa.itens|map(attribute="dados")|list|tojson }}'
+                       data-marcacoes='{{ tarefa.marcacoes|map(attribute="texto")|list|tojson }}'
+                       {%- if tarefa.generalista %}
+                       data-secoes='{{ tarefa.secoes_ativas|tojson }}'
+                       {%- endif %}
+                       {%- if tarefa.video %}
+                       data-video-plataforma="{{ tarefa.video.nome_da_plataforma }}"
+                       data-video-endereco="{{ tarefa.video.endereco }}"
+                       data-video-autor="{{ tarefa.video.autor }}"
+                       data-video-titulo="{{ tarefa.video.titulo }}"
+                       data-video-descricao="{{ tarefa.video.descricao }}"
+                       data-video-publicacao="{{ tarefa.video.data_de_publicacao }}"
+                       data-video-duracao="{{ tarefa.video.duracao }}"
+                       data-video-informacoes="{{ tarefa.video.informacoes_adicionais }}"
+                       data-video-player="{{ tarefa.video.endereco_do_player }}"
+                       {%- endif %}
+                       {%- if tarefa.e_video %}
+                       data-video-url-atualizar="{{ url_for('principal.atualizar_video', tarefa_id=tarefa.id) }}"
+                       {%- endif %}
+{%- endmacro %}
+
+{# O Vimeo informa o endereço da miniatura; sem ele, um retângulo neutro ocupa o lugar dela. -#}
+{% macro miniatura_do_video(video) -%}
+  {%- if video.miniatura -%}
+    <img class="video-miniatura" src="{{ video.miniatura }}" alt="" width="320" height="180" loading="lazy" referrerpolicy="no-referrer">
+  {%- else -%}
+    <span class="video-miniatura video-sem-miniatura" aria-hidden="true"></span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro marcacoes_do_cartao(tarefa) -%}
+<ul class="tarefa-marcacoes" aria-label="Marcações">
+                    {% for marcacao in tarefa.marcacoes %}<li>{{ marcacao.texto }}</li>{% endfor %}
+                  </ul>
+{%- endmacro %}
+
+{# No diálogo: o ENTER no campo vira uma marcação (app.js), e todas vão em JSON no campo oculto. -#}
+{% macro campo_de_marcacoes(id) -%}
+<div class="campo-marcacoes" data-marcacoes-campo>
+            <label for="{{ id }}">Marcações</label>
+            <ul class="marcacoes" data-marcacoes-lista aria-label="Marcações do cartão"></ul>
+            <input type="text" id="{{ id }}" maxlength="40" autocomplete="off" placeholder="Digite a marcação e aperte ENTER"
+                   data-marcacoes-entrada data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+            <input type="hidden" name="marcacoes" value="[]" data-marcacoes-valor>
+          </div>
+{%- endmacro %}
+
+{# Só no cartão generalista: tira a seção do cartão. O conteúdo dela é apagado ao salvar. -#}
+{% macro remover_secao(secao, rotulo) -%}
+<button class="botao-icone botao-excluir remover-secao" type="button" data-remover-secao="{{ secao }}" hidden
+                    aria-label="Retirar {{ rotulo }} do cartão" data-dica="Retirar {{ rotulo }} do cartão">{{ fechar() }}</button>
+{%- endmacro %}
+
+{% macro itens_da_tarefa(tarefa) -%}
+{% set total = tarefa.itens|length %}
+{% if total %}
+  {% set feitos = tarefa.itens|selectattr('concluido')|list|length %}
+  <div class="tarefa-progresso{{ ' tarefa-progresso-completo' if feitos == total }}" role="progressbar"
+       aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ feitos }}" aria-label="Progresso: {{ feitos }} de {{ total }} concluídas">
+    <span class="tarefa-progresso-barra"><span style="width: {{ (100 * feitos / total)|round|int }}%"></span></span>
+    <span class="tarefa-progresso-texto" aria-hidden="true">{{ feitos }}/{{ total }}</span>
+  </div>
+{% endif %}
+<ul class="tarefa-itens">
+                      {% for item in tarefa.itens[:3] %}
+                        <li class="{{ 'item-concluido' if item.concluido }}">
+                          <span class="item-marcador" role="img" aria-label="{{ 'Concluída' if item.concluido else 'Não concluída' }}">{{ concluido() }}</span>
+                          <span class="item-texto">{{ item.texto }}</span>
+                        </li>
+                      {% endfor %}
+                      {% set restantes = tarefa.itens|length - 3 %}
+                      {% if restantes > 0 %}
+                        <li class="itens-a-mais">+ {{ restantes }} {{ 'tarefa' if restantes == 1 else 'tarefas' }}</li>
+                      {% endif %}
+                    </ul>
+{%- endmacro %}
+
+{# No quadro, o nome do arquivo aparece só como texto: o download fica no diálogo. -#}
+{% macro anexos_da_tarefa(tarefa) -%}
+<ul class="tarefa-anexos">
+                      {% for anexo in tarefa.anexos %}
+                        <li data-anexo
+                            data-nome="{{ anexo.nome }}"
+                            data-tamanho="{{ anexo.tamanho_rotulo }}"
+                            data-url-baixar="{{ url_for('principal.baixar_anexo', anexo_id=anexo.id) }}"
+                            data-url-renomear="{{ url_for('principal.renomear_anexo', anexo_id=anexo.id) }}"
+                            data-url-excluir="{{ url_for('principal.excluir_anexo', anexo_id=anexo.id) }}">
+                          <span class="anexo-nome">{{ clipe() }}<span>{{ anexo.nome }}</span></span>
+                          <span class="anexo-tamanho">{{ anexo.tamanho_rotulo }}</span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+{%- endmacro %}
+
+{% block main %}
+  <div class="painel">
+    <aside class="lateral" aria-label="Categorias">
+      <div class="lateral-topo">
+        <h2>{{ etiqueta() }}Categorias</h2>
+        <div class="lateral-topo-acoes">
+          <button class="botao-topo nova-categoria" type="button" data-nova-categoria
+                  aria-label="Criar nova categoria" data-dica="Criar nova categoria">{{ mais() }}</button>
+          <button class="botao-topo alternar-lateral" type="button" data-alternar-lateral aria-expanded="true"
+                  aria-label="Ocultar categorias" data-dica="Ocultar categorias">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+          </button>
+        </div>
+      </div>
+      <nav class="categorias" aria-label="Filtrar por categoria">
+        <div class="categoria-item categoria-meu-dia">
+          <a class="categoria-link" href="{{ url_for('principal.meu_dia') }}" aria-label="Meu Dia" data-dica="Meu Dia" data-meu-dia>{{ sol() }}<span>Meu Dia</span></a>
+        </div>
+        <div class="categoria-item categoria-meu-dia">
+          <a class="categoria-link" href="{{ url_for('principal.calendario') }}" aria-label="Calendário" data-dica="Calendário" data-calendario>{{ icone_categoria('calendario') }}<span>Calendário</span></a>
+        </div>
+        <div class="categoria-item {{ 'categoria-ativa' if not categoria_selecionada }}">
+          <a class="categoria-link" href="{{ url_for('principal.quadro') }}" aria-label="Todas" data-dica="Todas">{{ icone_categoria('todas') }}<span>Todas</span></a>
+        </div>
+        {% for categoria in categorias %}
+          <div class="categoria-item {{ 'categoria-ativa' if categoria_selecionada and categoria_selecionada.id == categoria.id }}">
+            <a class="categoria-link" href="{{ url_for('principal.quadro', categoria=categoria.id) }}" aria-label="{{ categoria.nome }}" data-dica="{{ categoria.nome }}">{{ icone_categoria(categoria.icone) }}<span>{{ categoria.nome }}</span></a>
+            <button class="botao-icone" type="button"
+                    data-editar-categoria
+                    data-url="{{ url_for('principal.editar_categoria', categoria_id=categoria.id) }}"
+                    data-nome="{{ categoria.nome }}"
+                    data-icone="{{ categoria.icone }}"
+                    data-fundo="{{ categoria.fundo }}"
+                    aria-label="Editar categoria {{ categoria.nome }}" data-dica="Editar categoria">{{ caneta() }}</button>
+            <button class="botao-icone botao-excluir" type="button"
+                    data-excluir
+                    data-url-excluir="{{ url_for('principal.excluir_categoria', categoria_id=categoria.id) }}"
+                    aria-label="Excluir categoria {{ categoria.nome }}"
+                    data-dica="{{ 'Remova os projetos para excluir' if categoria.projetos else 'Excluir categoria' }}"
+                    {{ 'disabled' if categoria.projetos }}>{{ lixeira() }}</button>
+          </div>
+        {% endfor %}
+      </nav>
+      {% if categorias_compartilhadas %}
+        <h2 class="lateral-subtitulo">{{ compartilhar() }}<span>Compartilhadas comigo</span></h2>
+        <nav class="categorias" aria-label="Categorias compartilhadas comigo">
+          {% for categoria in categorias_compartilhadas %}
+            {% set dica_compartilhada = categoria.nome ~ ' - de ' ~ (categoria.usuario.nome or categoria.usuario.email) %}
+            <div class="categoria-item {{ 'categoria-ativa' if categoria_selecionada and categoria_selecionada.id == categoria.id }}">
+              <a class="categoria-link" href="{{ url_for('principal.quadro', categoria=categoria.id) }}" aria-label="{{ dica_compartilhada }}" data-dica="{{ dica_compartilhada }}">{{ icone_categoria(categoria.icone) }}<span>{{ categoria.nome }}</span></a>
+            </div>
+          {% endfor %}
+        </nav>
+      {% endif %}
+      <footer class="lateral-rodape">{{ current_user.plano_rotulo }}: {{ espaco_usado|megabytes }} de {{ current_user.espaco_para_anexos|megabytes }}</footer>
+    </aside>
+
+    {# O fundo é o da categoria aberta, também para quem a recebeu compartilhada. -#}
+    <div class="central{{ ' fundo-' ~ categoria_selecionada.fundo if categoria_selecionada and categoria_selecionada.fundo != 'padrao' }}">
+      <section class="barra" aria-label="Ações do quadro">
+        <h1>{{ icone_categoria(categoria_selecionada.icone if categoria_selecionada else 'todas') }}<span>{{ categoria_selecionada.nome if categoria_selecionada else 'Todos os projetos' }}</span></h1>
+        {% if permissao != 'dono' %}
+          <p class="barra-compartilhada">De {{ dono.nome or dono.email }} · {{ 'Pode editar' if permissao == 'editar' else 'Apenas visualizar' }}</p>
+        {% endif %}
+        <div class="barra-acoes">
+          {% if categoria_selecionada and permissao == 'dono' %}
+            {% set compartilhamentos = categoria_selecionada.compartilhamentos|sort(attribute='grupo.nome') %}
+            {% if compartilhamentos %}
+              <ul class="compartilhamentos" aria-label="Grupos com acesso a esta categoria">
+                {% for item in compartilhamentos %}
+                  {% set modo = 'Edição' if item.permissao == 'editar' else 'Visualização' %}
+                  {# A dica tem o nome do grupo em negrito: por isso é um elemento, e não o atributo data-dica. -#}
+                  <li tabindex="0">
+                    <span class="compartilhamento-grupo" style="color: {{ item.grupo.cor }}">{{ icone_grupo(item.grupo.icone) }}</span>
+                    <span class="compartilhamento-nome">{{ item.grupo.nome }}</span>
+                    <span class="compartilhamento-modo compartilhamento-{{ item.permissao }}">{{ modo }}</span>
+                    <span class="dica-formatada" role="tooltip">Os membros do grupo <strong>{{ item.grupo.nome }}</strong> {{ 'podem editar' if item.permissao == 'editar' else 'podem apenas visualizar' }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            <a class="botao botao-compartilhar" href="{{ url_for('principal.compartilhar_categoria', categoria_id=categoria_selecionada.id) }}"
+               aria-label="Compartilhar"
+               data-dica="{{ 'Alterar o compartilhamento' if compartilhamentos else 'Compartilhar a categoria com os seus grupos' }}">{{ compartilhar() }}<span class="rotulo-do-botao">Compartilhar</span></a>
+          {% endif %}
+          <form class="pesquisa" id="pesquisa" method="get" action="{{ url_for('principal.quadro') }}" role="search" {{ 'hidden' if not busca }}>
+            {% if categoria_selecionada %}<input type="hidden" name="categoria" value="{{ categoria_selecionada.id }}">{% endif %}
+            <input type="search" name="busca" value="{{ busca }}" maxlength="100" autocomplete="off"
+                   placeholder="Pesquisar nos cartões" aria-label="Pesquisar nos cartões" data-campo-pesquisa>
+            {% if busca %}
+              <a class="pesquisa-cancelar" href="{{ url_for('principal.quadro', categoria=categoria_selecionada.id if categoria_selecionada else None) }}"
+                 aria-label="Cancelar a pesquisa" data-dica="Cancelar a pesquisa">{{ fechar() }}</a>
+            {% else %}
+              <button class="pesquisa-cancelar" type="button" data-cancelar-pesquisa
+                      aria-label="Cancelar a pesquisa" data-dica="Cancelar a pesquisa">{{ fechar() }}</button>
+            {% endif %}
+          </form>
+          <button class="botao-topo {{ 'botao-ativo' if busca }}" type="button" data-pesquisar aria-controls="pesquisa"
+                  aria-expanded="{{ 'true' if busca else 'false' }}" aria-label="Pesquisar" data-dica="Pesquisar">{{ lupa() }}</button>
+          <form method="post" action="{{ url_for('principal.alternar_tarefas_ocultas') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {{ campos_de_volta() }}
+            {% set dica_ocultas = 'Não exibir as demandas ocultas' if mostrar_ocultas else 'Exibir as demandas ocultas' %}
+            <button class="botao-topo {{ 'botao-ativo' if mostrar_ocultas }}" type="submit"
+                    aria-pressed="{{ 'true' if mostrar_ocultas else 'false' }}"
+                    aria-label="{{ dica_ocultas }}" data-dica="{{ dica_ocultas }}">{{ olho() if mostrar_ocultas else olho_cortado() }}</button>
+          </form>
+          <button class="botao-topo" type="button" data-foco aria-pressed="false"
+                  aria-label="Modo foco" data-dica="Modo foco (F)">
+            <span data-icone-desligado>{{ icone_editor('tela-inteira') }}</span>
+            <span data-icone-ligado hidden>{{ icone_editor('sair-da-tela-inteira') }}</span>
+          </button>
+          {% if permissao == 'dono' %}
+          <button class="botao-topo botao-criar" type="button" data-novo-projeto
+                  {% if categoria_selecionada %}data-categoria-id="{{ categoria_selecionada.id }}"{% endif %}
+                  aria-label="Criar novo projeto"
+                  data-dica="{{ 'Criar novo projeto' if categorias else 'Crie uma categoria para criar um projeto' }}"
+                  {{ 'disabled' if not categorias }}>{{ mais() }}</button>
+          {% endif %}
+        </div>
+      </section>
+
+  {% if busca and not encontradas %}
+    <div class="vazio">
+      {{ ilustracao_vazia() }}
+      <h1>Nenhum cartão encontrado</h1>
+      <p>Nenhuma demanda, lista de tarefas ou vídeo tem “{{ busca }}”. Tente outra palavra ou cancele a pesquisa.</p>
+    </div>
+  {% elif projetos %}
+    {# Durante a pesquisa, o arrasto fica desligado: a posição na tela não conta os cartões filtrados. -#}
+    <div class="quadro" id="quadro" data-url-ordem="{{ url_for('principal.ordenar_projetos') }}" data-permissao="{{ permissao }}"{% if busca %} data-busca{% endif %}
+         data-versao="{{ versao }}"{% if quadro_compartilhado %} data-url-versao="{{ url_for('principal.versao_do_quadro', categoria=categoria_selecionada.id if categoria_selecionada else None) }}"{% endif %}>
+      {% for projeto in projetos %}
+        {% set tarefas = projeto.tarefas if mostrar_ocultas else projeto.tarefas|rejectattr('oculta')|list %}
+        {% if busca %}{% set tarefas = tarefas|selectattr('id', 'in', encontradas)|list %}{% endif %}
+        {% if not busca or tarefas %}
+        <section class="projeto" style="--cor-projeto: {{ projeto.cor }}" data-projeto-id="{{ projeto.id }}"
+                 data-fora-da-tela="{{ projeto.tarefas|length - tarefas|length }}" aria-label="Projeto {{ projeto.nome }}">
+          <header class="projeto-topo">
+            <div class="projeto-titulo">
+              {% if permissao == 'dono' and not busca %}<span class="projeto-alca" data-dica="Arrastar para mudar a ordem" aria-hidden="true">&#10303;</span>{% endif %}
+              <h2>{{ projeto.nome }}</h2>
+              <span class="contador" data-contador>{{ tarefas|length }}</span>
+              <div class="projeto-titulo-acoes">
+              {% if pode_editar %}
+              <div class="menu">
+                <button class="botao-icone" type="button" data-menu-gatilho aria-controls="menu-criar-{{ projeto.id }}" aria-expanded="false" aria-haspopup="true"
+                        aria-label="Criar um cartão em {{ projeto.nome }}" data-dica="Criar um cartão">{{ mais() }}</button>
+                <div class="menu-caixa menu-criar" id="menu-criar-{{ projeto.id }}" hidden>
+                  <button class="menu-item" type="button" data-nova-tarefa data-tipo="generalista" data-projeto-id="{{ projeto.id }}">Cartão - Generalista</button>
+                  <button class="menu-item" type="button" data-nova-tarefa data-tipo="atividade" data-projeto-id="{{ projeto.id }}">Cartão - Demanda</button>
+                  <button class="menu-item" type="button" data-nova-tarefa data-tipo="lista_de_tarefas" data-projeto-id="{{ projeto.id }}">Cartão - Lista de Tarefas</button>
+                  <button class="menu-item" type="button" data-novo-video data-projeto-id="{{ projeto.id }}">Cartão - Vídeo</button>
+                </div>
+              </div>
+              {% endif %}
+              {% if permissao == 'dono' %}
+              <button class="botao-icone" type="button"
+                      data-editar-projeto
+                      data-url="{{ url_for('principal.editar_projeto', projeto_id=projeto.id) }}"
+                      data-nome="{{ projeto.nome }}"
+                      data-cor="{{ projeto.cor }}"
+                      data-categoria-id="{{ projeto.categoria_id or '' }}"
+                      data-concluida="{{ 'sim' if projeto.concluida }}"
+                      aria-label="Editar projeto {{ projeto.nome }}" data-dica="Editar projeto">{{ caneta() }}</button>
+              <button class="botao-icone botao-excluir" type="button"
+                      data-excluir data-excluir-projeto
+                      data-url-excluir="{{ url_for('principal.excluir_projeto', projeto_id=projeto.id) }}"
+                      data-dica-livre="Excluir projeto"
+                      data-dica-bloqueada="Remova as demandas para excluir"
+                      data-dica-ocultas="Exiba as demandas ocultas para excluir"
+                      aria-label="Excluir projeto {{ projeto.nome }}"
+                      data-dica="{{ 'Excluir projeto' if not projeto.tarefas else ('Remova as demandas para excluir' if tarefas else 'Exiba as demandas ocultas para excluir') }}"
+                      {{ 'disabled' if projeto.tarefas }}>{{ lixeira() }}</button>
+              {% endif %}
+              </div>
+            </div>
+            {% if projeto.categoria %}<p class="projeto-categoria">{{ icone_categoria(projeto.categoria.icone) }}<span>{{ projeto.categoria.nome }}</span></p>{% endif %}
+          </header>
+
+          <div class="projeto-tarefas" data-tarefas>
+            {% for tarefa in tarefas %}
+              {% set vencida = tarefa.previsao_execucao and tarefa.previsao_execucao < agora and not tarefa.concluida_em %}
+              <article class="tarefa {{ 'tarefa-video' if tarefa.e_video else 'prioridade-' ~ tarefa.prioridade }}{{ ' tarefa-vencida' if vencida }}{{ ' tarefa-oculta' if tarefa.oculta }}{{ ' tarefa-concluida' if tarefa.concluida_em }}{{ ' video-simplificado' if tarefa.e_video and tarefa.video.simplificado }}"
+                       {% if not tarefa.e_video %}title="Prioridade {{ tarefa.prioridade_rotulo }}{{ ' - Vencida' if vencida }}"{% endif %}
+                       {{ dados_da_tarefa(tarefa) }}>
+                {% if pode_editar and not busca %}<span class="tarefa-alca" aria-hidden="true" title="Arrastar">&#10303;</span>{% endif %}
+                <div class="tarefa-corpo">
+                  {% if tarefa.e_video %}
+                    {{ miniatura_do_video(tarefa.video) }}
+                  {% endif %}
+                  {% if tarefa.e_video %}
+                  <button class="tarefa-nome" type="button">{{ tarefa.nome }}</button>
+                  {% else %}
+                  {# À direita do título: o responsável (ou, para o proprietário, o botão de escolhê-lo) e o proprietário. -#}
+                  <div class="tarefa-titulo">
+                    <button class="tarefa-nome" type="button">{{ tarefa.nome }}</button>
+                    {% set responsavel = tarefa.responsavel_atual %}
+                    <div class="tarefa-pessoas{{ ' com-responsavel' if responsavel }}">
+                      {% set nome_do_responsavel = (responsavel.nome or responsavel.email) if responsavel else '' %}
+                      {% if permissao == 'dono' %}
+                        <button class="tarefa-pessoa tarefa-responsavel {{ 'sem-responsavel' if not responsavel }}" type="button" data-escolher-responsavel
+                                data-url="{{ url_for('principal.definir_responsavel', tarefa_id=tarefa.id) }}"
+                                data-categoria="{{ projeto.categoria_id or 0 }}" data-responsavel="{{ responsavel.id if responsavel else current_user.id }}"
+                                aria-label="{{ 'Responsável: ' ~ nome_do_responsavel ~ '. Alterar o responsável' if responsavel else 'Adicionar Responsável' }}"
+                                data-dica="{{ 'Responsável: ' ~ nome_do_responsavel if responsavel else 'Adicionar Responsável' }}">{{ icone_do_usuario(responsavel) if responsavel else adicionar_pessoa() }}</button>
+                      {% elif responsavel %}
+                        <span class="tarefa-pessoa tarefa-responsavel" role="img" tabindex="0" aria-label="Responsável: {{ nome_do_responsavel }}"
+                              data-dica="Responsável: {{ nome_do_responsavel }}">{{ icone_do_usuario(responsavel) }}</span>
+                      {% endif %}
+                      {% set proprietario = tarefa.proprietario %}
+                      <span class="tarefa-pessoa tarefa-proprietario" role="img" tabindex="0" aria-label="Proprietário: {{ proprietario.nome or proprietario.email }}"
+                            data-dica="{{ proprietario.nome or proprietario.email }}">{{ icone_do_usuario(proprietario) }}</span>
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% if tarefa.e_video %}
+                    <p class="video-resumo">{{ video() }}<span>{{ tarefa.video.autor }}{{ ' · ' ~ tarefa.video.duracao if tarefa.video.duracao }}</span></p>
+                  {% endif %}
+                  {% if tarefa.previsao_execucao %}<time class="tarefa-previsao" datetime="{{ tarefa.previsao_execucao.strftime('%Y-%m-%dT%H:%M') }}">{{ tarefa.previsao_execucao.strftime('%d/%m/%Y %H:%M') }}</time>{% endif %}
+                  {% if tarefa.descricao and not tarefa.lista_de_tarefas %}<div class="tarefa-descricao texto-formatado">{{ tarefa.descricao|safe }}</div>{% endif %}
+                  {% if tarefa.itens and (tarefa.lista_de_tarefas or tarefa.generalista) %}{{ itens_da_tarefa(tarefa) }}{% endif %}
+                  {% if tarefa.generalista and tarefa.video %}
+                    {# No formato simplificado do vídeo: a miniatura em 40% da largura e o título à direita. -#}
+                    <div class="tarefa-video-do-cartao">
+                      {{ miniatura_do_video(tarefa.video) }}
+                      <span class="tarefa-video-do-cartao-titulo">{{ tarefa.video.titulo }}</span>
+                    </div>
+                  {% endif %}
+                  {% if tarefa.concluida_em %}<p class="tarefa-concluida-em">{{ concluida() }}<span>Concluída em {{ tarefa.concluida_em.strftime('%d/%m/%Y %H:%M') }}</span></p>{% endif %}
+                  {% if tarefa.local %}<p class="tarefa-local">{{ marcador() }}<span>{{ tarefa.local }}</span></p>{% endif %}
+                  {% if tarefa.marcacoes %}{{ marcacoes_do_cartao(tarefa) }}{% endif %}
+                  {% if tarefa.anexos %}
+                    {{ anexos_da_tarefa(tarefa) }}
+                  {% endif %}
+                </div>
+                {% if pode_editar %}
+                <div class="tarefa-acoes">
+                  {% if permissao == 'dono' %}
+                  {% set rotulo_do_cartao = 'vídeo' if tarefa.e_video else 'demanda' %}
+                  <button class="botao-icone botao-excluir" type="button"
+                          data-excluir
+                          data-url-excluir="{{ url_for('principal.excluir_tarefa', tarefa_id=tarefa.id) }}"
+                          aria-label="Excluir {{ rotulo_do_cartao }} {{ tarefa.nome }}" data-dica="Excluir {{ rotulo_do_cartao }}">{{ lixeira() }}</button>
+                  {% endif %}
+                  {% if not tarefa.e_video %}
+                  <form method="post" action="{{ url_for('principal.concluir_tarefa', tarefa_id=tarefa.id) }}" data-acao-cartao>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ campos_de_volta() }}
+                    {% set dica_concluir = 'Desmarcar como concluída' if tarefa.concluida_em else 'Marcar como concluída' %}
+                    <button class="botao-icone botao-concluir" type="submit" aria-pressed="{{ 'true' if tarefa.concluida_em else 'false' }}"
+                            aria-label="{{ dica_concluir }} {{ tarefa.nome }}" data-dica="{{ dica_concluir }}">{{ concluida() }}</button>
+                  </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('principal.ocultar_tarefa', tarefa_id=tarefa.id) }}" data-acao-cartao>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ campos_de_volta() }}
+                    {% set dica_ocultar = ('Reexibir o ' if tarefa.oculta else 'Ocultar o ') ~ 'vídeo' if tarefa.e_video else ('Reexibir a demanda' if tarefa.oculta else 'Ocultar a demanda') %}
+                    <button class="botao-icone" type="submit"
+                            aria-label="{{ dica_ocultar }} {{ tarefa.nome }}" data-dica="{{ dica_ocultar }}">{{ olho() if tarefa.oculta else olho_cortado() }}</button>
+                  </form>
+                  {% if tarefa.e_video %}
+                  <form method="post" action="{{ url_for('principal.simplificar_video', tarefa_id=tarefa.id) }}" data-acao-cartao>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {{ campos_de_volta() }}
+                    {% set dica_simplificar = 'Exibir o vídeo completo' if tarefa.video.simplificado else 'Simplificar o vídeo' %}
+                    <button class="botao-icone botao-simplificar" type="submit" aria-pressed="{{ 'true' if tarefa.video.simplificado else 'false' }}"
+                            aria-label="{{ dica_simplificar }} {{ tarefa.nome }}" data-dica="{{ dica_simplificar }}">{{ expandir() if tarefa.video.simplificado else simplificar() }}</button>
+                  </form>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% elif permissao != 'dono' %}
+    <div class="vazio">
+      {{ ilustracao_vazia() }}
+      <h1>Nenhum projeto nesta categoria</h1>
+      <p>Quando {{ dono.nome or dono.email }} incluir projetos em “{{ categoria_selecionada.nome }}”, eles aparecem aqui.</p>
+    </div>
+  {% elif categoria_selecionada %}
+    <div class="vazio">
+      {{ ilustracao_vazia() }}
+      <h1>Nenhum projeto nesta categoria</h1>
+      <p>Crie um projeto em “{{ categoria_selecionada.nome }}” ou edite um projeto para incluí-lo aqui.</p>
+      <button class="botao botao-primario" type="button" data-novo-projeto data-categoria-id="{{ categoria_selecionada.id }}">{{ mais() }}Criar projeto</button>
+    </div>
+  {% elif not categorias %}
+    <div class="vazio">
+      {{ ilustracao_vazia() }}
+      <h1>Crie sua primeira categoria</h1>
+      <p>Todo projeto pertence a uma categoria, como “Trabalho” e “Casa”. Use o botão abaixo ou o ícone + ao lado de “Categorias”.</p>
+      <button class="botao botao-primario" type="button" data-nova-categoria>{{ mais() }}Criar categoria</button>
+    </div>
+  {% else %}
+    <div class="vazio">
+      {{ ilustracao_vazia() }}
+      <h1>Crie seu primeiro projeto</h1>
+      <p>As demandas ficam organizadas em projetos, como “Site novo” e “Mudança”. Use o botão abaixo ou o ícone + no alto da tela.</p>
+      <button class="botao botao-primario" type="button" data-novo-projeto>{{ mais() }}Criar projeto</button>
+    </div>
+  {% endif %}
+
+    </div>
+  </div>
+
+  {% if tarefa_aberta %}
+    <div hidden data-abrir-tarefa {{ dados_da_tarefa(tarefa_aberta) }}>{{ anexos_da_tarefa(tarefa_aberta) }}</div>
+  {% endif %}
+
+  <dialog id="dialogo-tarefa" class="dialogo">
+    <form method="post" autocomplete="off" enctype="multipart/form-data" data-url-nova="{{ url_for('principal.criar_tarefa') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 data-titulo>Nova demanda</h2>
+      <div class="colunas-da-tarefa">
+        <div class="tarefa-campos-iniciais">
+          <label for="tarefa-nome">{{ tarefa_form.nome.label.text }}</label>
+          {{ tarefa_form.nome(id='tarefa-nome', required=True, maxlength=120, autocomplete='off', **{'data-lpignore': 'true', 'data-1p-ignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other'}) }}
+          <div class="campos-lado-a-lado">
+            <div>
+              <label for="tarefa-prioridade">{{ tarefa_form.prioridade.label.text }}</label>
+              {{ tarefa_form.prioridade(id='tarefa-prioridade') }}
+            </div>
+            <div>
+              <label for="tarefa-previsao">{{ tarefa_form.previsao_execucao.label.text }}</label>
+              {{ tarefa_form.previsao_execucao(id='tarefa-previsao') }}
+            </div>
+          </div>
+        </div>
+        <div class="tarefa-campos-finais">
+          <label for="tarefa-local">{{ tarefa_form.local.label.text }}</label>
+          {{ tarefa_form.local(id='tarefa-local', maxlength=120, autocomplete='off', **{'data-lpignore': 'true', 'data-1p-ignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other'}) }}
+          {{ campo_de_marcacoes('tarefa-marcacoes') }}
+          {# Só no cartão generalista: os botões das seções que ainda não foram acrescentadas. -#}
+          <div class="adicionar-secoes" data-adicionar-secoes hidden>
+            <p class="editor-titulo">Adicionar ao cartão</p>
+            <div class="adicionar-secoes-botoes">
+              {% for secao, rotulo, icone in [('arquivos', 'Arquivos', clipe()), ('descricao', 'Descrição', caneta()),
+                                              ('tarefas', 'Lista de Tarefas', concluido()), ('video', 'Vídeo', video())] %}
+                <button class="botao" type="button" data-adicionar-secao="{{ secao }}">{{ icone }}{{ rotulo }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="anexos-area" data-secao="arquivos">
+            <div class="secao-topo">
+              <p class="anexos-titulo">Arquivos</p>
+              {{ remover_secao('arquivos', 'Arquivos') }}
+            </div>
+            <div id="tarefa-anexos"></div>
+            <template id="modelo-anexo">
+              <div class="anexo-item">
+                <a target="_blank" rel="noopener" data-anexo-link></a>
+                <span class="anexo-tamanho" data-anexo-tamanho></span>
+                <button class="botao-icone" type="button" data-renomear-anexo data-dica="Alterar nome do arquivo">{{ caneta() }}</button>
+                <button class="botao-icone botao-excluir" type="button" data-excluir data-dica="Excluir arquivo">{{ lixeira() }}</button>
+              </div>
+            </template>
+            <div id="tarefa-anexar">
+              <input class="anexar-entrada" type="file" id="tarefa-arquivos" name="anexos" multiple
+                     data-limite="{{ limite_anexos }}" data-tamanho-maximo="{{ tamanho_maximo_anexo }}"
+                     data-espaco="{{ dono.espaco_para_anexos }}" data-espaco-usado="{{ espaco_do_dono }}">
+              <label class="botao anexar" for="tarefa-arquivos">{{ clipe() }}Enviar arquivos</label>
+              <p class="anexos-dica" id="tarefa-arquivos-escolhidos"></p>
+            </div>
+            <p class="anexos-dica" data-espaco-em-uso>Até {{ limite_anexos }} arquivos, com até {{ tamanho_maximo_anexo // (1024 * 1024) }} MB cada. Espaço em uso{{ ' por ' ~ (dono.nome or dono.email) if permissao != 'dono' }}: {{ espaco_do_dono|tamanho }} de {{ dono.espaco_para_anexos|tamanho }}.</p>
+          </div>
+        </div>
+        <div class="tarefa-coluna-direita">
+        {# No cartão generalista, Descrição, Tarefas e Vídeo ficam em abas (atualizarSecoes, em app.js). -#}
+        <div class="abas-da-tarefa" role="tablist" aria-label="Conteúdo do cartão" data-abas-da-tarefa hidden>
+          {% for secao, rotulo in [('descricao', 'Descrição'), ('tarefas', 'Tarefas'), ('video', 'Vídeo')] %}
+            <button class="aba-da-tarefa" type="button" role="tab" id="aba-{{ secao }}" aria-controls="painel-{{ secao }}"
+                    aria-selected="false" tabindex="-1" data-aba="{{ secao }}" hidden>{{ rotulo }}</button>
+          {% endfor %}
+        </div>
+        <div class="tarefa-campo-descricao" id="painel-descricao" data-secao="descricao">
+          <div class="secao-topo">
+            <p class="editor-titulo" id="tarefa-descricao-titulo">{{ tarefa_form.descricao.label.text }}</p>
+            {{ remover_secao('descricao', 'Descrição') }}
+          </div>
+          <div class="editor-barra" role="toolbar" aria-labelledby="tarefa-descricao-titulo">
+            {% for comando, rotulo in [
+              ('bold', 'Negrito'), ('italic', 'Itálico'), ('underline', 'Sublinhado'),
+              ('maior', 'Aumentar o tamanho da fonte'), ('menor', 'Diminuir o tamanho da fonte'),
+              ('insertUnorderedList', 'Lista'), ('insertOrderedList', 'Lista numerada'),
+              ('indent', 'Aumentar o recuo'), ('outdent', 'Diminuir o recuo'),
+              ('imagem', 'Inserir imagem'), ('link', 'Inserir link'),
+            ] %}
+              <button class="botao-icone" type="button" data-editor="{{ comando }}"
+                      aria-label="{{ rotulo }}" data-dica="{{ rotulo }}">{{ icone_editor(comando) }}</button>
+            {% endfor %}
+            <label class="botao-icone editor-cor" data-dica="Alterar a cor da fonte">
+              {{ icone_editor('cor') }}
+              <input type="color" id="editor-cor" value="#d32f2f" aria-label="Alterar a cor da fonte">
+            </label>
+            <button class="botao-icone editor-visualizar-botao" type="button" data-editor="visualizar"
+                    aria-pressed="false" aria-label="Apenas visualizar a descrição" data-dica="Apenas visualizar a descrição">
+              <span data-icone-desligado>{{ icone_editor('visualizar') }}</span>
+              <span data-icone-ligado hidden>{{ icone_editor('editar') }}</span>
+            </button>
+            <button class="botao-icone" type="button" data-editor="tela-inteira"
+                    aria-pressed="false" aria-label="Editar em tela inteira" data-dica="Editar em tela inteira">
+              <span data-icone-desligado>{{ icone_editor('tela-inteira') }}</span>
+              <span data-icone-ligado hidden>{{ icone_editor('sair-da-tela-inteira') }}</span>
+            </button>
+            <input type="file" id="editor-imagem" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+          </div>
+          <div class="editor texto-formatado" id="tarefa-editor" contenteditable="true" role="textbox"
+               aria-multiline="true" aria-labelledby="tarefa-descricao-titulo"
+               data-url-imagem="{{ url_for('principal.enviar_imagem') }}"
+               data-tamanho-maximo="{{ tamanho_maximo_anexo }}"></div>
+          {{ tarefa_form.descricao(id='tarefa-descricao', hidden=True) }}
+        </div>
+        <div class="tarefa-campo-itens" id="painel-tarefas" data-secao="tarefas" hidden>
+          <div class="itens-topo">
+            <p class="editor-titulo" id="tarefa-itens-titulo">Tarefas</p>
+            <div class="secao-topo-acoes">
+              <button class="botao-icone" type="button" data-ordenar-itens
+                      aria-label="Ordenar em ordem alfabética" data-dica="Ordenar em ordem alfabética">{{ icone_editor('ordenar') }}</button>
+              {{ remover_secao('tarefas', 'Lista de Tarefas') }}
+            </div>
+          </div>
+          <ul class="itens-da-lista" id="tarefa-itens" aria-labelledby="tarefa-itens-titulo"></ul>
+          <button class="botao adicionar-item" type="button" data-adicionar-item>{{ mais() }}Adicionar tarefa</button>
+          <template id="modelo-item">
+            <li class="item-da-lista">
+              <span class="item-alca" aria-hidden="true" title="Arrastar para mudar a ordem">&#10303;</span>
+              <button class="item-marcador" type="button" aria-pressed="false" aria-label="Marcar como concluída">{{ concluido() }}</button>
+              <input class="item-texto" type="text" maxlength="255" aria-label="Tarefa" placeholder="Descreva a tarefa"
+                     autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+              <button class="botao-icone botao-excluir" type="button" data-remover-item aria-label="Remover a tarefa" data-dica="Remover a tarefa">{{ lixeira() }}</button>
+            </li>
+          </template>
+          {{ tarefa_form.itens(id='tarefa-itens-dados') }}
+        </div>
+        {# Só no cartão generalista. O servidor lê de novo o vídeo no YouTube ou no Vimeo ao salvar. -#}
+        <div class="tarefa-campo-video" id="painel-video" data-secao="video" hidden data-url-previa="{{ url_for('principal.previa_do_video') }}">
+          <div class="secao-topo">
+            <p class="editor-titulo">Vídeo</p>
+            {{ remover_secao('video', 'Vídeo') }}
+          </div>
+          <label for="tarefa-video-endereco">Endereço do vídeo no YouTube ou no Vimeo</label>
+          <div class="video-endereco-linha">
+            {{ tarefa_form.video_endereco(id='tarefa-video-endereco', type='url', maxlength=400, placeholder='https://www.youtube.com/watch?v=... ou https://vimeo.com/...',
+                                          autocomplete='off', **{'data-lpignore': 'true', 'data-1p-ignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other'}) }}
+            <button class="botao" type="button" data-receber-video>Receber Informações</button>
+          </div>
+          {{ tarefa_form.video_atualizar(id='tarefa-video-atualizar') }}
+          <div class="tarefa-video-dados" data-video-dados hidden>
+            <div class="tarefa-video-player">
+              <iframe id="tarefa-video-player" title="Vídeo" src="about:blank"
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+            <p class="tarefa-video-titulo" data-video-dado="titulo"></p>
+            <p class="tarefa-video-detalhes">
+              <span data-video-dado="autor"></span>
+              <span data-video-dado="publicacao" data-rotulo="Publicado em "></span>
+              <span data-video-dado="duracao" data-rotulo="Duração: "></span>
+            </p>
+          </div>
+        </div>
+        </div>
+      </div>
+      <input type="hidden" id="tarefa-projeto" name="projeto_id">
+      {{ tarefa_form.tipo(id='tarefa-tipo') }}
+      {{ tarefa_form.secoes(id='tarefa-secoes') }}
+      <div class="dialogo-acoes">
+        <button class="botao botao-historico" type="button" data-abrir-historico hidden>Histórico</button>
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-video-novo" class="dialogo dialogo-video-novo" aria-labelledby="video-novo-titulo">
+    <form autocomplete="off" data-url="{{ url_for('principal.criar_video') }}">
+      <h2 id="video-novo-titulo">Novo vídeo do YouTube ou do Vimeo</h2>
+      <input type="hidden" id="video-novo-projeto">
+      <label for="video-novo-endereco">Endereço do vídeo no YouTube ou no Vimeo</label>
+      <input type="url" id="video-novo-endereco" required maxlength="400" placeholder="https://www.youtube.com/watch?v=... ou https://vimeo.com/..." autocomplete="off"
+             data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+      <label for="video-novo-autor">Autor</label>
+      <input type="text" id="video-novo-autor" maxlength="100" readonly data-video-campo="autor">
+      <label for="video-novo-titulo-campo">Título</label>
+      <input type="text" id="video-novo-titulo-campo" maxlength="200" readonly data-video-campo="titulo">
+      <label for="video-novo-descricao">Descrição</label>
+      <textarea id="video-novo-descricao" rows="3" readonly data-video-campo="descricao"></textarea>
+      <label for="video-novo-publicacao">Data de publicação</label>
+      <input type="text" id="video-novo-publicacao" maxlength="10" readonly data-video-campo="publicacao">
+      <label for="video-novo-duracao">Duração</label>
+      <input type="text" id="video-novo-duracao" maxlength="20" readonly data-video-campo="duracao">
+      <div class="dialogo-acoes">
+        <button class="botao botao-primario" type="submit" data-receber-informacoes>Receber Informações</button>
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  {% if permissao == 'dono' %}
+  {# Uma caixa para todos os cartões: app.js mostra só as pessoas da categoria do cartão clicado. -#}
+  <dialog id="dialogo-responsavel" class="dialogo dialogo-responsavel" aria-labelledby="responsavel-titulo">
+    <form method="post" data-acao-cartao>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 id="responsavel-titulo" data-titulo>Adicionar Responsável</h2>
+      <p class="responsavel-explicacao">Quem vai executar o que está no cartão. Essa pessoa também recebe os avisos de atraso.</p>
+      {% for categoria_id, pessoas in responsaveis_possiveis.items() %}
+        <fieldset class="opcoes-responsavel" data-candidatos="{{ categoria_id }}" hidden>
+          <legend>Pessoas com acesso ao quadro</legend>
+          {% for pessoa in pessoas %}
+            <label class="opcao-responsavel">
+              <input type="radio" name="responsavel_id" value="{{ pessoa.id }}" disabled>
+              {{ icone_do_usuario(pessoa) }}
+              <span>{{ pessoa.nome or pessoa.email }}{% if pessoa.id == current_user.id %} (você){% endif %}</span>
+            </label>
+          {% endfor %}
+          {% if pessoas|length == 1 %}
+            <p class="responsavel-explicacao">Compartilhe a categoria com um grupo para escolher outra pessoa.</p>
+          {% endif %}
+        </fieldset>
+      {% endfor %}
+      <div class="dialogo-acoes">
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+  {% endif %}
+
+  <template id="modelo-marcacao">
+    <li class="marcacao">
+      <span data-marcacao-texto></span>
+      <button class="marcacao-remover" type="button" data-remover-marcacao>{{ fechar() }}</button>
+    </li>
+  </template>
+
+  <dialog id="dialogo-video" class="dialogo dialogo-video" aria-labelledby="video-titulo-dialogo">
+    <form method="post" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 id="video-titulo-dialogo" data-titulo>Editar vídeo</h2>
+      <div class="colunas-do-video">
+        <div class="video-campos">
+          <label for="video-autor">Autor</label>
+          <input type="text" id="video-autor" maxlength="100" readonly>
+          <label for="video-titulo">Título</label>
+          <input type="text" id="video-titulo" maxlength="200" readonly>
+          {# Um bloco, e não um textarea: os endereços da descrição viram links que podem ser clicados. -#}
+          <p class="rotulo-do-campo" id="video-descricao-rotulo">Descrição</p>
+          <div class="video-descricao" id="video-descricao" role="textbox" aria-readonly="true" aria-multiline="true"
+               aria-labelledby="video-descricao-rotulo" tabindex="0"></div>
+          <label for="video-publicacao">Data de publicação</label>
+          <input type="text" id="video-publicacao" maxlength="10" readonly>
+          <label for="video-duracao">Duração</label>
+          <input type="text" id="video-duracao" maxlength="20" readonly>
+          <label for="video-informacoes">Informações Adicionais</label>
+          <textarea id="video-informacoes" name="informacoes_adicionais" rows="4"></textarea>
+        </div>
+        <div class="video-player">
+          <iframe id="video-player" title="Vídeo" src="about:blank"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          {{ campo_de_marcacoes('video-marcacoes') }}
+        </div>
+      </div>
+      <div class="dialogo-acoes">
+        <button class="botao botao-historico" type="button" data-abrir-historico hidden>Histórico</button>
+        <button class="botao" type="button" data-atualizar-video>Atualizar as informações</button>
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-link" class="dialogo">
+    <form autocomplete="off">
+      <h2>Inserir link</h2>
+      <label for="link-endereco">Endereço</label>
+      <input type="text" id="link-endereco" required maxlength="2000" autocomplete="off">
+      <div class="dialogo-acoes">
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Inserir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-projeto" class="dialogo">
+    <form method="post" autocomplete="off" data-url-nova="{{ url_for('principal.criar_projeto') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 data-titulo>Novo projeto</h2>
+      <label for="projeto-nome">{{ projeto_form.nome.label.text }}</label>
+      {{ projeto_form.nome(id='projeto-nome', required=True, maxlength=80, autocomplete='off') }}
+      <fieldset class="cores">
+        <legend>{{ projeto_form.cor.label.text }}</legend>
+        {% for opcao in projeto_form.cor %}
+          <label class="cor-opcao" style="--cor: {{ opcao.data }}" title="{{ opcao.label.text }}">
+            {{ opcao(**{'aria-label': opcao.label.text}) }}
+          </label>
+        {% endfor %}
+      </fieldset>
+      <label for="projeto-categoria">{{ projeto_form.categoria_id.label.text }}</label>
+      {{ projeto_form.categoria_id(id='projeto-categoria', required=True) }}
+      <label class="opcao-marcada">{{ projeto_form.concluida(id='projeto-concluido') }}{{ projeto_form.concluida.label.text }}</label>
+      <p class="anexos-dica">As demandas deste projeto não geram alertas de atraso.</p>
+      <div class="dialogo-acoes">
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-categoria" class="dialogo">
+    <form method="post" autocomplete="off" data-url-nova="{{ url_for('principal.criar_categoria') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 data-titulo>Nova categoria</h2>
+      <label for="categoria-nome">{{ categoria_form.nome.label.text }}</label>
+      {{ categoria_form.nome(id='categoria-nome', required=True, maxlength=80, autocomplete='off') }}
+      <fieldset class="cores">
+        <legend>{{ categoria_form.icone.label.text }}</legend>
+        {% for opcao in categoria_form.icone %}
+          <label class="cor-opcao icone-opcao" title="{{ opcao.label.text }}">
+            {{ opcao(required=True, **{'aria-label': opcao.label.text}) }}
+            {{ icone_categoria(opcao.data) }}
+          </label>
+        {% endfor %}
+      </fieldset>
+      <fieldset class="cores fundos">
+        <legend>{{ categoria_form.fundo.label.text }}</legend>
+        {% for opcao in categoria_form.fundo %}
+          <label class="cor-opcao fundo-opcao fundo-{{ opcao.data }}" data-dica="{{ opcao.label.text }}">
+            {{ opcao(**{'aria-label': opcao.label.text}) }}
+          </label>
+        {% endfor %}
+      </fieldset>
+      <div class="dialogo-acoes">
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-anexo" class="dialogo">
+    <form method="post" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 data-titulo>Alterar nome do arquivo</h2>
+      <label for="anexo-nome">{{ anexo_form.nome.label.text }}</label>
+      {{ anexo_form.nome(id='anexo-nome', required=True, maxlength=255, autocomplete='off') }}
+      <div class="dialogo-acoes">
+        <button class="botao" type="button" data-fechar>Cancelar</button>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  {# Abre por cima do diálogo do cartão; o conteúdo vem de /tarefas/<id>/historico. -#}
+  <dialog id="dialogo-historico" class="dialogo dialogo-historico" aria-labelledby="historico-titulo">
+    <h2 id="historico-titulo">Histórico</h2>
+    <div class="historico-conteudo" data-historico aria-live="polite"></div>
+    <div class="dialogo-acoes">
+      <button class="botao" type="button" data-fechar>Fechar</button>
+    </div>
+  </dialog>
+
+  <dialog id="dialogo-atalhos" class="dialogo dialogo-atalhos" aria-labelledby="atalhos-titulo">
+    <h2 id="atalhos-titulo">Atalhos do teclado</h2>
+    <dl class="atalhos">
+      <dt><kbd>/</kbd></dt><dd>Pesquisar nos cartões</dd>
+      {% if projetos and permissao != 'visualizar' %}<dt><kbd>N</kbd></dt><dd>Criar uma demanda no primeiro projeto</dd>{% endif %}
+      <dt><kbd>F</kbd></dt><dd>Ligar e desligar o modo foco</dd>
+      <dt><kbd>D</kbd></dt><dd>Abrir o Meu Dia</dd>
+      <dt><kbd>C</kbd></dt><dd>Abrir o Calendário</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Fechar a caixa aberta ou sair do modo foco</dd>
+      <dt><kbd>?</kbd></dt><dd>Mostrar estes atalhos</dd>
+    </dl>
+    <div class="confirmacao-acoes">
+      <button class="botao botao-primario" type="button" data-fechar>Ok</button>
+    </div>
+  </dialog>
+
+  <dialog id="confirmacao" class="dialogo notificacao" aria-labelledby="confirmacao-titulo">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ campos_de_volta() }}
+      <h2 id="confirmacao-titulo">Confirmação</h2>
+      <p>Confirma a exclusão?</p>
+      <div class="confirmacao-acoes">
+        <button class="botao botao-primario" type="submit">Sim</button>
+        <button class="botao" type="button" data-fechar autofocus>Não</button>
+      </div>
+    </form>
+  </dialog>
+{% endblock %}

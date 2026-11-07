@@ -1,0 +1,61 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import icone_categoria, olho_cortado %}
+{% block title %}Calendário - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="calendario-pagina">
+    <div class="calendario-topo">
+      <h1>{{ icone_categoria('calendario') }}<span>{{ titulo }}</span></h1>
+      <div class="calendario-acoes">
+        <nav class="calendario-navegar" aria-label="Navegar no calendário">
+          <a class="botao-topo" href="{{ url_for('principal.calendario', visao=visao, data=anterior.isoformat()) }}"
+             aria-label="{{ 'Mês anterior' if visao == 'mes' else 'Semana anterior' }}" data-dica="{{ 'Mês anterior' if visao == 'mes' else 'Semana anterior' }}">‹</a>
+          <a class="botao" href="{{ url_for('principal.calendario', visao=visao) }}">Hoje</a>
+          <a class="botao-topo" href="{{ url_for('principal.calendario', visao=visao, data=proximo.isoformat()) }}"
+             aria-label="{{ 'Próximo mês' if visao == 'mes' else 'Próxima semana' }}" data-dica="{{ 'Próximo mês' if visao == 'mes' else 'Próxima semana' }}">›</a>
+        </nav>
+        <nav class="calendario-visoes" aria-label="Visão do calendário">
+          {% for chave, rotulo in [('mes', 'Mês'), ('semana', 'Semana')] %}
+            <a class="botao {{ 'botao-primario' if visao == chave }}" href="{{ url_for('principal.calendario', visao=chave, data=dia.isoformat()) }}"
+               {% if visao == chave %}aria-current="page"{% endif %}>{{ rotulo }}</a>
+          {% endfor %}
+        </nav>
+        <a class="botao" href="{{ url_for('principal.quadro') }}">Voltar para Todos os Projetos</a>
+      </div>
+    </div>
+    <p class="calendario-dica">Arraste um cartão para outro dia para mudar a Previsão de Execução; o horário continua o mesmo.</p>
+    <div class="calendario calendario-{{ visao }}" id="calendario">
+      {% for nome in dias_curtos %}<div class="calendario-semana-nome" aria-hidden="true">{{ nome }}</div>{% endfor %}
+      {% for semana in semanas %}
+        {% for data in semana %}
+          {% set cartoes = por_dia.get(data, []) %}
+          {% set classes = ['calendario-dia'] %}
+          {% if data == hoje %}{% set _ = classes.append('calendario-hoje') %}{% endif %}
+          {% if visao == 'mes' and data.month != dia.month %}{% set _ = classes.append('calendario-fora-do-mes') %}{% endif %}
+          {% if not cartoes %}{% set _ = classes.append('calendario-dia-vazio') %}{% endif %}
+          <section class="{{ classes|join(' ') }}" data-data="{{ data.isoformat() }}" aria-label="{{ dias_curtos[(data.weekday() + 1) % 7] }}, {{ data.strftime('%d/%m/%Y') }}">
+            <h2 class="calendario-numero"><span class="calendario-dia-nome">{{ dias_curtos[(data.weekday() + 1) % 7] }}, </span>{{ data.day }}</h2>
+            <ul class="calendario-cartoes" data-cartoes>
+              {% for tarefa in cartoes %}
+                {% set de_outro = tarefa.projeto.usuario_id != current_user.id %}
+                {% set vencida = tarefa.previsao_execucao < momento %}
+                <li class="calendario-item prioridade-{{ tarefa.prioridade }}{{ ' calendario-vencida' if vencida }}" style="--cor-projeto: {{ tarefa.projeto.cor }}"
+                    data-tarefa-id="{{ tarefa.id }}"
+                    {% if pode_mover[tarefa.id] %}data-url-previsao="{{ url_for('principal.mudar_previsao', tarefa_id=tarefa.id) }}"{% endif %}>
+                  {% if pode_mover[tarefa.id] %}<span class="calendario-alca" aria-hidden="true">&#10303;</span>{% endif %}
+                  <a href="{{ url_for('principal.quadro', tarefa=tarefa.id, categoria=tarefa.projeto.categoria_id if de_outro else None) }}"
+                     title="{{ tarefa.previsao_execucao.strftime('%d/%m/%Y %H:%M') }} · {{ tarefa.projeto.nome }}" draggable="false">
+                    <span class="calendario-hora">{{ tarefa.previsao_execucao.strftime('%H:%M') }}</span>
+                    <span class="calendario-nome">{{ tarefa.nome }}</span>
+                    {%- if tarefa.oculta %}<span class="calendario-oculta" aria-label="Oculta">{{ olho_cortado() }}</span>{% endif %}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

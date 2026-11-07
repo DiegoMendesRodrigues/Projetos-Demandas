@@ -1,0 +1,65 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import caneta, lixeira, mais %}
+{% block title %}Usuários - Projetos &amp; Demandas{% endblock %}
+{% macro cabecalho_ordenavel(chave, rotulo) -%}
+  {% set ativo = ordem == chave %}
+  {% set proximo = 'desc' if ativo and sentido == 'asc' else 'asc' %}
+  <th scope="col" aria-sort="{{ ('ascending' if sentido == 'asc' else 'descending') if ativo else 'none' }}">
+    <a class="ordenar" href="{{ url_for('principal.usuarios', ordem=chave, sentido=proximo) }}" data-dica="Ordenar por {{ rotulo|lower }}">{{ rotulo }}{% if ativo %}<span aria-hidden="true">{{ ' ▲' if sentido == 'asc' else ' ▼' }}</span>{% endif %}</a>
+  </th>
+{%- endmacro %}
+{% block main %}
+  <div class="cartao-central usuarios">
+    <div class="usuarios-topo">
+      <h1>Usuários</h1>
+      <a class="botao botao-primario" href="{{ url_for('principal.criar_usuario') }}">{{ mais() }}Novo usuário</a>
+    </div>
+    <div class="tabela-rolagem">
+      <table class="tabela tabela-usuarios">
+        <thead>
+          <tr>
+            {{ cabecalho_ordenavel('nome', 'Nome') }}
+            {{ cabecalho_ordenavel('email', 'E-mail') }}
+            {{ cabecalho_ordenavel('administrador', 'Administrador') }}
+            {{ cabecalho_ordenavel('plano', 'Plano') }}
+            <th scope="col">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario in todos_os_usuarios %}
+            <tr>
+              <td>{{ usuario.nome }}</td>
+              <td data-rotulo="E-mail">{{ usuario.email }}</td>
+              <td data-rotulo="Administrador">{{ 'Sim' if usuario.administrador else 'Não' }}</td>
+              <td data-rotulo="Plano">{{ usuario.plano_rotulo }}</td>
+              <td class="tabela-acoes">
+                <a class="botao-icone" href="{{ url_for('principal.editar_usuario', usuario_id=usuario.id) }}"
+                   aria-label="Editar usuário {{ usuario.nome or usuario.email }}" data-dica="Editar usuário">{{ caneta() }}</a>
+                <button class="botao-icone botao-excluir" type="button"
+                        data-excluir
+                        data-url-excluir="{{ url_for('principal.excluir_usuario', usuario_id=usuario.id) }}"
+                        aria-label="Excluir usuário {{ usuario.nome or usuario.email }}"
+                        data-dica="{{ 'Você não pode excluir a sua conta' if usuario.id == current_user.id else 'Excluir usuário' }}"
+                        {{ 'disabled' if usuario.id == current_user.id }}>{{ lixeira() }}</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dialog id="confirmacao" class="dialogo notificacao" aria-labelledby="confirmacao-titulo">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2 id="confirmacao-titulo">Confirmação</h2>
+      <p>Confirma a exclusão do usuário, com todos os seus projetos, demandas e arquivos?</p>
+      <div class="confirmacao-acoes">
+        <button class="botao botao-primario" type="submit">Sim</button>
+        <button class="botao" type="button" data-fechar autofocus>Não</button>
+      </div>
+    </form>
+  </dialog>
+{% endblock %}

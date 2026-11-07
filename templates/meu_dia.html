@@ -1,0 +1,55 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import icone_do_usuario, icone_categoria, ilustracao_vazia, olho_cortado, sol %}
+{% block title %}Meu Dia - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="meu-dia">
+    <div class="meu-dia-topo">
+      <div>
+        <h1>{{ sol() }}Meu Dia</h1>
+        <p class="meu-dia-data">{{ hoje[0]|upper }}{{ hoje[1:] }}</p>
+      </div>
+      <div class="meu-dia-acoes">
+        <a class="botao" href="{{ url_for('principal.calendario') }}">Calendário</a>
+        <a class="botao" href="{{ url_for('principal.quadro') }}">Voltar para Todos os Projetos</a>
+      </div>
+    </div>
+    {% if not total %}
+      <div class="vazio">
+        {{ ilustracao_vazia() }}
+        <h1>Nada previsto para os próximos dias</h1>
+        <p>As demandas e listas de tarefas com Previsão de Execução até {{ dias }} dias aparecem aqui.</p>
+      </div>
+    {% endif %}
+    {% for chave, rotulo in grupos_do_meu_dia if grupos[chave] %}
+      <section class="meu-dia-grupo meu-dia-{{ chave }}" aria-labelledby="meu-dia-{{ chave }}">
+        <h2 id="meu-dia-{{ chave }}">{{ rotulo }} <span class="contador">{{ grupos[chave]|length }}</span></h2>
+        <ul>
+          {% for tarefa in grupos[chave] %}
+            {% set de_outro = tarefa.projeto.usuario_id != current_user.id %}
+            <li>
+              <a class="meu-dia-item prioridade-{{ tarefa.prioridade }}" style="--cor-projeto: {{ tarefa.projeto.cor }}"
+                 href="{{ url_for('principal.quadro', tarefa=tarefa.id, categoria=tarefa.projeto.categoria_id if de_outro else None) }}">
+                <span class="meu-dia-hora">
+                  {%- if chave in ('hoje', 'amanha') %}{{ tarefa.previsao_execucao.strftime('%H:%M') }}{% else %}{{ tarefa.previsao_execucao.strftime('%d/%m %H:%M') }}{% endif -%}
+                </span>
+                <span class="meu-dia-texto">
+                  <span class="meu-dia-nome">{{ tarefa.nome }}</span>
+                  <span class="meu-dia-lista">
+                    {%- if tarefa.projeto.categoria %}{{ icone_categoria(tarefa.projeto.categoria.icone) }}{{ tarefa.projeto.categoria.nome }} · {% endif %}{{ tarefa.projeto.nome }}
+                    {%- if tarefa.oculta %} · <span class="meu-dia-oculta">{{ olho_cortado() }}Oculta</span>{% endif -%}
+                  </span>
+                </span>
+                {% if de_outro %}
+                  {% set dono = tarefa.proprietario %}
+                  <span class="meu-dia-responsavel" data-dica="Você é o responsável. Proprietário: {{ dono.nome or dono.email }}">{{ icone_do_usuario(dono) }}</span>
+                {% endif %}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

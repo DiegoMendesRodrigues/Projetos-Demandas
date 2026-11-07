@@ -1,0 +1,3 @@
+# Driver do SQL Server (BANCO_TIPO=mssql); exige o Microsoft ODBC Driver 18 instalado no sistema (INSTALL.md): pip install -r requirements-mssql.txt
+-r requirements.txt
+pyodbc>=5.1,<6

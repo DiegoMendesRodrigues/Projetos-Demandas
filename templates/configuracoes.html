@@ -1,0 +1,56 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% block title %}Configurações - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central perfil">
+    <h1>Configurações</h1>
+    <h2 class="subtitulo">Envio de e-mails</h2>
+    {% if sem_hosts_permitidos %}
+      <p class="compartilhar-alerta configuracoes-alerta">Defina HOSTS_PERMITIDOS no ambiente do servidor com o domínio ou o IP do sistema (INSTALL.md). Sem isso, um pedido com outro endereço pode fazer o link de criar uma nova senha apontar para outro site.</p>
+    {% endif %}
+    <form action="{{ url_for('principal.configuracoes') }}" method="post" autocomplete="off">
+      {{ form.hidden_tag() }}
+      <label for="servidor">{{ form.servidor.label.text }}</label>
+      {{ form.servidor(required=True, maxlength=200, autocomplete='off') }}
+      {% for erro in form.servidor.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="porta">{{ form.porta.label.text }}</label>
+      {{ form.porta(required=True) }}
+      {% for erro in form.porta.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="usar_tls">{{ form.usar_tls.label.text }}</label>
+      {{ form.usar_tls(required=True) }}
+      <p class="anexos-dica">Na porta 465, a conexão é sempre cifrada desde o início.</p>
+      {% for erro in form.usar_tls.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="usuario">{{ form.usuario.label.text }}</label>
+      {{ form.usuario(required=True, maxlength=200, autocomplete='off') }}
+      {% for erro in form.usuario.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="senha">{{ form.senha.label.text }}</label>
+      {{ form.senha(required=not tem_senha, maxlength=200, autocomplete='new-password') }}
+      {% if tem_senha %}<p class="anexos-dica">Deixe em branco para manter a senha atual.</p>{% endif %}
+      {% for erro in form.senha.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="email_envio">{{ form.email_envio.label.text }}</label>
+      {{ form.email_envio(required=True, maxlength=200, type='email', autocomplete='off') }}
+      {% for erro in form.email_envio.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="nome_envio">{{ form.nome_envio.label.text }}</label>
+      {{ form.nome_envio(required=True, maxlength=200, autocomplete='off') }}
+      {% for erro in form.nome_envio.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <div class="formulario-acoes">
+        <a class="botao" href="{{ url_for('principal.quadro') }}">Cancelar</a>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+    <h2 class="subtitulo">Banco de dados</h2>
+    {% if aviso_do_banco %}
+      <p class="compartilhar-alerta configuracoes-alerta" data-aviso-do-banco>{{ aviso_do_banco }}</p>
+    {% endif %}
+    <dl class="banco-em-uso">
+      <div><dt>Banco</dt><dd>{{ banco_em_uso.tipo }}</dd></div>
+      {% if banco_em_uso.servidor %}<div><dt>Servidor</dt><dd>{{ banco_em_uso.servidor }}</dd></div>{% endif %}
+      <div><dt>{{ "Arquivo" if banco_em_uso.tipo == "SQLite" else "Nome do banco" }}</dt><dd>{{ banco_em_uso.nome }}</dd></div>
+      {% if banco_em_uso.usuario %}<div><dt>Usuário</dt><dd>{{ banco_em_uso.usuario }}</dd></div>{% endif %}
+      {% if banco_em_uso.tls %}<div><dt>Conexão</dt><dd>{{ banco_em_uso.tls }}</dd></div>{% endif %}
+    </dl>
+    <p class="anexos-dica">O banco de dados é escolhido no ambiente do servidor (variáveis BANCO_*, no INSTALL.md), e não por esta tela.</p>
+  </div>
+  {% include "_ver_senha.html" %}
+{% endblock %}

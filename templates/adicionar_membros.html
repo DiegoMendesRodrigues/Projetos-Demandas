@@ -1,0 +1,43 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import mais %}
+{% block title %}Adicionar Membros - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central usuarios">
+    <div class="usuarios-topo">
+      <h1>Adicionar Membros</h1>
+      <a class="botao" href="{{ url_for('principal.grupos') }}">Voltar</a>
+    </div>
+    <p class="subtitulo"><span class="grupo-nome" style="color: {{ grupo.cor }}">{{ icone_grupo(grupo.icone) }}<span class="grupo-nome-texto">{{ grupo.nome }}</span></span></p>
+    <form class="busca-membros" action="{{ url_for('principal.adicionar_membros', grupo_id=grupo.id) }}" method="get" role="search">
+      <input type="email" name="busca" value="{{ busca }}" maxlength="255" placeholder="E-mail da pessoa" aria-label="E-mail da pessoa" autocomplete="off" required>
+      <button class="botao" type="submit">Buscar</button>
+    </form>
+    <p class="dica-da-busca">Informe o e-mail completo da pessoa que você quer adicionar.</p>
+    <div class="tabela-rolagem">
+      <table class="tabela">
+        <thead>
+          <tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col" aria-label="Ações"></th></tr>
+        </thead>
+        <tbody>
+          {% for usuario in candidatos %}
+            <tr>
+              <td>{{ usuario.nome }}</td>
+              <td data-rotulo="E-mail">{{ usuario.email }}</td>
+              <td class="tabela-acoes">
+                <form class="acao-em-linha" action="{{ url_for('principal.adicionar_membro', grupo_id=grupo.id, usuario_id=usuario.id) }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="busca" value="{{ busca }}">
+                  <button class="botao botao-primario" type="submit">{{ mais() }}Adicionar</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3">{% if busca %}Nenhuma pessoa disponível para adicionar com este e-mail: ela não tem conta ou já é membro do grupo.{% else %}Busque pelo e-mail para encontrar a pessoa.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

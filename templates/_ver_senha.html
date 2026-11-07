@@ -1,0 +1,9 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% from "_icones.html" import olho, olho_cortado %}
+<template id="modelo-ver-senha">
+  <button class="botao-icone ver-senha" type="button" aria-pressed="false" aria-label="Mostrar senha" data-dica="Mostrar senha">
+    <span data-senha-oculta>{{ olho() }}</span>
+    <span data-senha-visivel hidden>{{ olho_cortado() }}</span>
+  </button>
+</template>

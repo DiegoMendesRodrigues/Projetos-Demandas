@@ -1,0 +1,10 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+Olá, {{ user.nome or user.email }}!
+
+Para começar a usar o Projetos & Demandas, confirme o seu e-mail pelo endereço abaixo:
+{{ confirmation_link }}
+
+Este link vale por {{ config.SECURITY_CONFIRM_EMAIL_WITHIN|duracao }}. Se você não criou esta conta, ignore esta mensagem.
+
+Projetos & Demandas

@@ -1,0 +1,13 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{# Recebe o formulário em `formulario`. A imagem é carregada à parte e troca o desafio da sessão. -#}
+{% from "security/_macros.html" import render_field_with_errors %}
+{% if config.CAPTCHA_ATIVO %}
+  <div class="captcha">
+    <img class="captcha-imagem" src="{{ url_for('principal.imagem_captcha') }}" width="200" height="70"
+         alt="Imagem com o código de verificação" data-captcha-imagem>
+    <button class="botao-icone" type="button" data-captcha-trocar
+            aria-label="Gerar outra imagem" data-dica="Gerar outra imagem">{{ icone_grupo('seta-ciclo') }}</button>
+  </div>
+  {{ render_field_with_errors(formulario.captcha) }}
+{% endif %}

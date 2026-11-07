@@ -1,0 +1,47 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% set titulo = 'Alterar grupo' if grupo else 'Criar um Grupo' %}
+{% block title %}{{ titulo }} - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central perfil cartao-grupo">
+    <h1>{{ titulo }}</h1>
+    <form action="{{ url_for('principal.editar_grupo', grupo_id=grupo.id) if grupo else url_for('principal.criar_grupo') }}" method="post" autocomplete="off">
+      {{ form.hidden_tag() }}
+      <label for="nome">{{ form.nome.label.text }}</label>
+      {{ form.nome(required=True, maxlength=100, autocomplete='off') }}
+      {% for erro in form.nome.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="descricao">{{ form.descricao.label.text }}</label>
+      {{ form.descricao(rows=3) }}
+      <fieldset class="cores">
+        <legend>{{ form.cor.label.text }}</legend>
+        {% for opcao in form.cor %}
+          <label class="cor-opcao" style="--cor: {{ opcao.data }}" title="{{ opcao.label.text }}">
+            {{ opcao(required=True, **{'aria-label': opcao.label.text}) }}
+          </label>
+        {% endfor %}
+      </fieldset>
+      {% for erro in form.cor.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <label for="ingresso">{{ form.ingresso.label.text }}</label>
+      {{ form.ingresso() }}
+      {% for erro in form.ingresso.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <p class="rotulo-grupo">{{ form.icone.label.text }}</p>
+      {% for categoria, icones in categorias_de_icone %}
+        <fieldset class="cores icones-do-grupo">
+          <legend>{{ categoria }}</legend>
+          {% for chave, rotulo in icones %}
+            <label class="cor-opcao icone-opcao" title="{{ rotulo }}">
+              <input type="radio" name="icone" value="{{ chave }}" required aria-label="{{ rotulo }}"{{ ' checked' if form.icone.data == chave }}>
+              {{ icone_grupo(chave) }}
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+      {% for erro in form.icone.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <div class="formulario-acoes">
+        <a class="botao" href="{{ url_for('principal.grupos') }}">Cancelar</a>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

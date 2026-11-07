@@ -1,0 +1,11 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% block title %}Erro {{ codigo }} - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central">
+    <h1>Erro {{ codigo }}</h1>
+    <p>{{ mensagem }}</p>
+    <a class="botao botao-primario" href="{{ url_for('principal.quadro') }}">Voltar ao quadro</a>
+  </div>
+{% endblock %}

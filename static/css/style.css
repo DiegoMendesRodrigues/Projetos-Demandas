@@ -1,0 +1,4229 @@
+/* Projetos & Demandas | Solução on-line para a gestão de projetos e demandas */
+/* Desenvolvido por Diego Mendes Rodrigues */
+:root {
+  --fundo: #f6f5f2;
+  --superficie: #ffffff;
+  --superficie-2: #eeece7;
+  --texto: #2f3134;
+  --texto-suave: #63666b;
+  --borda: #dcd9d2;
+  --perigo: #c8102e;
+  --sucesso: #1e8e3e;
+  --sombra: 0 1px 3px rgba(40, 40, 40, 0.12);
+  --sombra-forte: 0 10px 24px rgba(40, 40, 40, 0.22);
+}
+
+/* --acento-contraste é a cor do texto e dos ícones sobre o fundo --acento. */
+[data-tema="azul"] { --cabecalho: #0b3f91; --acento: #1a6fe0; --acento-suave: #cfe3ff; --acento-texto: #0b52b8; --acento-contraste: #ffffff; }
+[data-tema="cinza"] { --cabecalho: #333b47; --acento: #56606e; --acento-suave: #dde2e9; --acento-texto: #3f4854; --acento-contraste: #ffffff; }
+[data-tema="laranja"] { --cabecalho: #a34a00; --acento: #ff8a00; --acento-suave: #ffdfb3; --acento-texto: #9c4400; --acento-contraste: #2b1600; }
+[data-tema="verde"] { --cabecalho: #005c30; --acento: #00a651; --acento-suave: #c0f2d3; --acento-texto: #006e36; --acento-contraste: #00240f; }
+[data-tema="vermelho"] { --cabecalho: #9c0f18; --acento: #e0242c; --acento-suave: #ffd3d3; --acento-texto: #b0101a; --acento-contraste: #ffffff; }
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Todo o site em 90% do tamanho. O app.js lê o zoom (escalaDaPagina) para posicionar o arraste, e as
+   medidas em vh e vw são divididas por --escala para continuarem valendo a tela inteira. */
+html {
+  --escala: 0.9;
+  color-scheme: light;
+  zoom: var(--escala);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh / var(--escala));
+  min-height: calc(100dvh / var(--escala));
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+body.arrastando {
+  cursor: grabbing;
+  user-select: none;
+}
+
+main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+h1, h2, p {
+  margin-top: 0;
+}
+
+a {
+  color: var(--acento-texto);
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 2px;
+}
+
+input, select, textarea, button {
+  font: inherit;
+}
+
+input:not([type="checkbox"]):not([type="submit"]):not([type="radio"]), select, textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* O filtro de :hover isola a dica do botão: estas camadas a mantêm na frente do conteúdo. */
+.topo {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--borda);
+  background: var(--cabecalho);
+}
+
+.marca {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* O ícone do cabeçalho (icone_cabecalho.png, 634 x 438) com 60 px de altura e, ao lado, o nome
+   do sistema no estilo do logotipo: o "&" em verde, como o arco do ícone. */
+.marca-logo {
+  display: block;
+  flex: none;
+  height: 60px;
+  background: none;
+}
+
+.marca-nome {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.marca-e {
+  color: #8fd650;
+}
+
+@media (max-width: 640px) {
+  .marca-logo {
+    height: 48px;
+  }
+
+  .marca-nome {
+    font-size: 1.15rem;
+  }
+}
+
+.topo-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu-caixa {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-forte);
+}
+
+.menu-caixa[hidden] {
+  display: none;
+}
+
+.menu-caixa form {
+  margin: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--texto);
+  cursor: pointer;
+  font-size: 0.92rem;
+  text-align: left;
+  text-decoration: none;
+}
+
+.menu-item[hidden] {
+  display: none;
+}
+
+.menu-item:hover {
+  background: var(--superficie-2);
+}
+
+/* As amostras da Cor da Aplicação, no Meu Perfil. */
+.tema-opcao-azul { --amostra: #1a6fe0; }
+.tema-opcao-cinza { --amostra: #56606e; }
+.tema-opcao-laranja { --amostra: #ff8a00; }
+.tema-opcao-verde { --amostra: #00a651; }
+.tema-opcao-vermelho { --amostra: #e0242c; }
+
+.botao-topo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.botao-topo:hover {
+  background: var(--superficie-2);
+}
+
+.botao-topo svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.topo .botao-topo:not(.botao-usuario) {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.topo .botao-topo:not(.botao-usuario):hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.topo .botao-topo:not(.botao-usuario):disabled {
+  background: transparent;
+  cursor: default;
+}
+
+.topo .botao-topo.botao-alertas, .topo .botao-topo.botao-alertas:hover {
+  border-color: #ffffff;
+  background: #e01b24;
+}
+
+.alertas-contador {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #c8102e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--sombra);
+}
+
+.menu-alertas {
+  overflow-y: auto;
+  width: 340px;
+  max-height: calc(60dvh / var(--escala));
+}
+
+.menu-alertas .menu-item {
+  overflow-wrap: anywhere;
+}
+
+.menu-alertas .menu-item span {
+  min-width: 0;
+}
+
+.menu-alertas .icone {
+  flex: none;
+}
+
+.marca:focus-visible, .topo .botao-topo:focus-visible {
+  outline-color: #ffffff;
+}
+
+.botao-usuario {
+  position: relative;
+  border: 0;
+  border-radius: 50%;
+  background: var(--acento);
+}
+
+.botao-usuario:hover {
+  background: var(--acento);
+  filter: brightness(0.96);
+}
+
+.botao-usuario svg,
+.botao-usuario .avatar-foto {
+  width: 36px;
+  height: 36px;
+  stroke: none;
+}
+
+.avatar {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/* A foto do Meu Perfil, já recortada em círculo (transparente fora dele). */
+.avatar-foto {
+  object-fit: cover;
+  background: var(--acento-suave);
+}
+
+.avatar-fundo {
+  fill: var(--acento-suave);
+}
+
+.avatar-roupa, .avatar-brinco {
+  fill: var(--acento);
+}
+
+.avatar-pele {
+  fill: var(--superficie);
+  stroke: var(--acento-texto);
+  stroke-width: 1;
+}
+
+.avatar-cabelo, .avatar-rosto {
+  fill: var(--acento-texto);
+}
+
+.avatar-traco {
+  fill: none;
+  stroke: var(--acento-texto);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.avatar-gravata {
+  fill: var(--acento-contraste);
+}
+
+.avatar-lampada {
+  fill: var(--superficie);
+  stroke: var(--acento-texto);
+  stroke-width: 1.5;
+}
+
+.avatar-anel {
+  fill: none;
+  stroke: var(--acento-texto);
+  stroke-width: 2;
+}
+
+[data-dica]::after {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--texto);
+  color: var(--fundo);
+  content: attr(data-dica);
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.marca[data-dica]::after, .lateral [data-dica]::after {
+  right: auto;
+  left: 0;
+}
+
+[data-dica]:focus-visible::after {
+  display: block;
+}
+
+@media (hover: hover) {
+  [data-dica]:hover::after {
+    display: block;
+  }
+}
+
+[data-menu-gatilho][aria-expanded="true"]::after {
+  display: none !important;
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--texto);
+  cursor: pointer;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.botao:hover {
+  background: var(--superficie-2);
+}
+
+.botao-primario, .formulario-conta input[type="submit"] {
+  border: 1px solid var(--acento);
+  background: var(--acento);
+  color: var(--acento-contraste);
+  font-weight: 600;
+}
+
+.botao-primario:hover, .formulario-conta input[type="submit"]:hover {
+  filter: brightness(0.96);
+  background: var(--acento);
+}
+
+.icone {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.botao-icone {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.botao-excluir:hover:not(:disabled) {
+  color: var(--perigo);
+}
+
+.botao-icone:hover:not(:disabled) {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+.botao-icone:disabled {
+  cursor: default;
+}
+
+.botao-icone:disabled .icone {
+  opacity: 0.35;
+}
+
+.notificacao {
+  width: min(360px, calc(100vw / var(--escala) - 32px));
+  text-align: center;
+}
+
+.dialogo.notificacao h2 {
+  margin-bottom: 10px;
+}
+
+.notificacao p {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.notificacao .botao {
+  min-width: 100px;
+  margin-top: 8px;
+}
+
+.confirmacao-acoes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.painel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.lateral {
+  display: flex;
+  flex: 0 0 230px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 12px;
+  border-right: 1px solid var(--borda);
+  background: var(--superficie);
+}
+
+.lateral-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lateral-topo-acoes {
+  display: flex;
+  gap: 4px;
+}
+
+.alternar-lateral, .nova-categoria {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.lateral-oculta .nova-categoria {
+  display: none;
+}
+
+.botao-criar, .botao-criar:hover {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--acento-contraste);
+}
+
+.botao-criar:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.botao-criar:disabled {
+  border-color: var(--borda);
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  cursor: default;
+}
+
+.alternar-lateral svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lateral-oculta .alternar-lateral svg {
+  transform: rotate(180deg);
+}
+
+.lateral-oculta .lateral {
+  flex-basis: 57px;
+}
+
+.lateral-rodape {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.lateral-oculta .lateral h2,
+.lateral-oculta .lateral-rodape,
+.lateral-oculta .categoria-link span,
+.lateral-oculta .categoria-item .botao-icone {
+  display: none;
+}
+
+.lateral-oculta .categoria-link {
+  justify-content: center;
+  padding: 8px 0;
+}
+
+/* O nome só aparece como dica com a lateral recolhida: aberta, ele já está escrito. */
+.painel:not(.lateral-oculta) .categoria-link::after {
+  display: none;
+}
+
+.lateral h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0 8px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.categoria-item {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.categoria-item:hover {
+  background: var(--superficie-2);
+}
+
+.categoria-link {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--texto);
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.categoria-ativa, .categoria-ativa:hover {
+  background: var(--acento);
+  font-weight: 600;
+}
+
+.categoria-ativa .categoria-link, .categoria-ativa .botao-icone {
+  color: var(--acento-contraste);
+}
+
+.central {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.barra {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 16px;
+}
+
+.barra-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Pesquisar: a caixa fica à esquerda da lupa, com o ícone de cancelar dentro dela. Os 236 px são
+   os outros botões da barra (lupa, ocultas, modo foco e +), para todos caberem na linha do celular. */
+.pesquisa {
+  display: flex;
+  align-items: center;
+  width: min(260px, calc(100vw / var(--escala) - 236px));
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+.pesquisa[hidden] {
+  display: none;
+}
+
+.pesquisa:focus-within {
+  border-color: var(--acento);
+}
+
+#pesquisa input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0 4px 0 10px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  outline: none;
+}
+
+#pesquisa input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.pesquisa-cancelar {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.pesquisa-cancelar:hover {
+  color: var(--texto);
+}
+
+.pesquisa-cancelar .icone {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.botao-ativo {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.barra h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.quadro {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 16px 20px;
+}
+
+/* Os projetos podem ser arrastados para os lados pela área livre do quadro. */
+.quadro-rolavel {
+  cursor: grab;
+}
+
+.projeto {
+  display: flex;
+  flex: 0 0 320px;
+  flex-direction: column;
+  width: 320px;
+  border-top: 4px solid var(--cor-projeto);
+  border-radius: 10px;
+  background: var(--superficie-2);
+  background: color-mix(in srgb, var(--cor-projeto) 16%, var(--superficie-2));
+}
+
+.projeto-topo {
+  padding: 10px 12px 6px;
+}
+
+.projeto-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projeto-alca {
+  position: relative;
+  flex: none;
+  color: var(--texto-suave);
+  cursor: grab;
+  font-size: 1.05rem;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+}
+
+.projeto-alca[data-dica]::after {
+  right: auto;
+  left: 0;
+}
+
+/* Simplificar o vídeo e Exibir o vídeo completo: a dica fica acima do botão. */
+.botao-simplificar[data-dica]::after {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.projeto-arrastando {
+  opacity: 0.35;
+}
+
+.projeto-fantasma {
+  position: fixed;
+  z-index: 100;
+  box-shadow: var(--sombra-forte);
+  pointer-events: none;
+  transform: rotate(1deg);
+}
+
+.projeto-titulo-acoes {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+}
+
+.projeto-titulo h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.contador {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.projeto-categoria {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.projeto-categoria .icone {
+  width: 14px;
+  height: 14px;
+}
+
+.projeto-tarefas {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 56px;
+  padding: 4px 10px 10px;
+}
+
+.tarefa {
+  display: flex;
+  gap: 4px;
+  padding: 10px 10px 10px 4px;
+  border-right: 6px solid transparent;
+  border-radius: 8px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  cursor: grab;
+  user-select: none;
+}
+
+.prioridade-baixa {
+  border-right-color: #1a8cff;
+}
+
+.prioridade-media {
+  border-right-color: #ff8a00;
+}
+
+.prioridade-alta {
+  border-right-color: #e8202a;
+}
+
+.tarefa-arrastando {
+  opacity: 0.35;
+}
+
+.tarefa-fantasma {
+  position: fixed;
+  z-index: 100;
+  box-shadow: var(--sombra-forte);
+  pointer-events: none;
+  transform: rotate(1.5deg);
+}
+
+.tarefa-alca {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex: 0 0 24px;
+  color: var(--texto-suave);
+  font-size: 1.05rem;
+  line-height: 1.3;
+  touch-action: none;
+}
+
+.tarefa-acoes {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (hover: hover) {
+  .tarefa-acoes .botao-icone {
+    min-height: 24px;
+  }
+}
+
+.tarefa-oculta {
+  opacity: 0.6;
+}
+
+.tarefa-corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Título do cartão com, à direita, o responsável e o proprietário. */
+.tarefa-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.tarefa-titulo .tarefa-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.tarefa-pessoas {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.tarefa-pessoa {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--texto-suave);
+}
+
+.tarefa-pessoa .avatar {
+  width: 22px;
+  height: 22px;
+}
+
+button.tarefa-pessoa {
+  cursor: pointer;
+}
+
+button.tarefa-pessoa:hover {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+.tarefa-pessoa .icone {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+/* Com um responsável, ele fica em destaque e o proprietário, em cinza. */
+.com-responsavel .tarefa-proprietario .avatar {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.dialogo-responsavel {
+  width: min(420px, calc(100vw / var(--escala) - 32px));
+}
+
+.responsavel-explicacao {
+  margin: 0 0 12px;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+}
+
+.opcoes-responsavel {
+  display: grid;
+  gap: 4px;
+  max-height: 320px;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  overflow-y: auto;
+}
+
+.opcoes-responsavel[hidden] {
+  display: none;
+}
+
+.opcoes-responsavel legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.dialogo .opcao-responsavel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.opcao-responsavel input {
+  flex: none;
+  margin: 0;
+}
+
+.opcao-responsavel:hover {
+  background: var(--superficie-2);
+}
+
+.opcao-responsavel .avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.tarefa-nome {
+  display: block;
+  overflow-wrap: anywhere;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.tarefa-vencida .tarefa-nome,
+.tarefa-vencida .tarefa-previsao {
+  color: var(--perigo);
+}
+
+.tarefa-previsao {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.tarefa-descricao {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* O cartão mostra só um resumo: tamanhos e imagens aparecem ao abrir a tarefa. */
+.tarefa-descricao font {
+  font-size: inherit;
+}
+
+.tarefa-descricao img {
+  display: none;
+}
+
+.tarefa-descricao a {
+  pointer-events: none;
+}
+
+.texto-formatado ul, .texto-formatado ol {
+  margin: 0;
+  padding-left: 1.5em;
+}
+
+.texto-formatado blockquote {
+  margin: 0 0 0 2em;
+}
+
+.texto-formatado p {
+  margin: 0;
+}
+
+.texto-formatado img {
+  max-width: 100%;
+  height: auto;
+}
+
+.texto-formatado a {
+  color: var(--acento-texto);
+  text-decoration: underline;
+}
+
+.menu-criar .menu-item {
+  white-space: nowrap;
+}
+
+/* Tarefas da lista de tarefas, no cartão e no diálogo. */
+.tarefa-itens, .itens-da-lista {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarefa-itens li, .item-da-lista {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tarefa-itens, .tarefa-itens .item-marcador {
+  cursor: default;
+}
+
+.tarefa-itens li {
+  padding: 2px 0;
+  font-size: 0.85rem;
+}
+
+.item-da-lista {
+  padding: 3px 8px 3px 2px;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.item-alca {
+  flex: none;
+  width: 16px;
+  color: var(--texto-suave);
+  font-size: 1.05rem;
+  line-height: 1;
+  text-align: center;
+  touch-action: none;
+}
+
+.item-arrastando {
+  background: var(--superficie-2);
+  box-shadow: var(--sombra);
+  opacity: 0.85;
+}
+
+.item-marcador {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid var(--texto-suave);
+  border-radius: 5px;
+  background: var(--superficie);
+  color: transparent;
+  cursor: pointer;
+}
+
+.item-marcador .icone {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.item-marcador[aria-pressed="true"],
+.item-concluido > .item-marcador {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--acento-contraste);
+}
+
+.item-texto {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tarefa-itens .itens-a-mais {
+  padding-left: 28px;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.item-concluido .item-texto {
+  color: color-mix(in srgb, var(--texto-suave) 55%, var(--superficie));
+  text-decoration: line-through;
+}
+
+.item-da-lista input.item-texto {
+  min-height: 36px;
+  padding: 6px 8px;
+}
+
+.adicionar-item {
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.itens-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tarefa-campo-itens {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A altura vem da coluna, como no editor da Descrição: muitas tarefas rolam aqui dentro. */
+.itens-da-lista {
+  overflow-y: scroll;
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+}
+
+@media (max-width: 640px) {
+  .itens-da-lista {
+    flex: none;
+    min-height: 160px;
+    max-height: calc(50dvh / var(--escala));
+  }
+}
+
+.botao-concluir:hover:not(:disabled), .botao-concluir[aria-pressed="true"] {
+  color: var(--sucesso);
+}
+
+.tarefa-concluida-em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0 0;
+  color: var(--sucesso);
+  font-size: 0.8rem;
+}
+
+.tarefa-concluida-em .icone {
+  width: 14px;
+  height: 14px;
+}
+
+/* Marcações: no cartão, só os nomes; no diálogo, cada uma com o botão de remover. */
+.tarefa-marcacoes,
+.marcacoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarefa-marcacoes li,
+.marcacao {
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--acento-suave);
+  color: var(--acento-texto);
+  overflow-wrap: anywhere;
+}
+
+.tarefa-marcacoes li {
+  padding: 1px 8px;
+  font-size: 0.75rem;
+}
+
+.marcacoes {
+  margin-bottom: 6px;
+}
+
+.marcacoes[hidden] {
+  display: none;
+}
+
+.marcacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 2px 2px 10px;
+  font-size: 0.85rem;
+}
+
+.marcacao-remover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.marcacao-remover:hover {
+  background: color-mix(in srgb, var(--acento) 20%, transparent);
+}
+
+.marcacao-remover .icone {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.5;
+}
+
+.campo-marcacoes {
+  margin-top: 4px;
+}
+
+.dialogo-somente-leitura [data-marcacoes-entrada],
+.dialogo-somente-leitura .marcacao-remover {
+  display: none;
+}
+
+.dialogo-somente-leitura .marcacao {
+  padding-right: 10px;
+}
+
+.tarefa-local {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.tarefa-local .icone {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.tarefa-local span {
+  min-width: 0;
+}
+
+.tarefa-anexos {
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.tarefa-anexos li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tarefa-anexos .anexo-nome {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tarefa-anexos .anexo-nome {
+  cursor: default;
+}
+
+.tarefa-anexos .anexo-nome span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tarefa-anexos .icone {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.anexo-tamanho {
+  flex: none;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.anexos-area {
+  margin-top: 12px;
+}
+
+.anexos-titulo {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.anexo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.anexo-item a {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anexo-item .anexo-tamanho {
+  margin-right: auto;
+}
+
+#tarefa-anexar {
+  position: relative;
+}
+
+.dialogo .anexar-entrada {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
+.dialogo .anexar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  cursor: pointer;
+}
+
+.anexar-entrada:focus-visible + .anexar {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 2px;
+}
+
+.anexos-dica {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.anexos-dica:empty {
+  display: none;
+}
+
+.vazio {
+  margin: 48px auto;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.vazio h1 {
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+}
+
+.vazio p {
+  color: var(--texto-suave);
+}
+
+.vazio .botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  margin-top: 12px;
+  padding-inline: 18px;
+}
+
+.vazio .botao svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ilustracao-vazia {
+  display: block;
+  width: 160px;
+  height: 104px;
+  margin: 0 auto 16px;
+}
+
+.ilustracao-projeto {
+  fill: var(--superficie);
+  stroke: var(--borda);
+  stroke-width: 2;
+}
+
+.ilustracao-cartao {
+  fill: var(--fundo);
+  stroke: var(--borda);
+  stroke-width: 1.5;
+}
+
+.ilustracao-destaque {
+  fill: var(--acento);
+  stroke: var(--acento);
+  opacity: 0.85;
+}
+
+.ilustracao-check {
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Fundo do quadro por categoria (Categoria.fundo, FUNDOS_DO_QUADRO). Os gradientes são suaves,
+   sobre a cor --fundo, para o texto e os projetos continuarem legíveis. */
+.fundo-ceu {
+  --fundo-quadro: linear-gradient(160deg, #dcecff 0%, #f1f7ff 55%, #e6f0fb 100%);
+}
+
+.fundo-menta {
+  --fundo-quadro: linear-gradient(160deg, #d9f5e8 0%, #f0fbf5 55%, #e1f3ea 100%);
+}
+
+.fundo-lavanda {
+  --fundo-quadro: linear-gradient(160deg, #ebe2fb 0%, #f7f3fe 55%, #e9e3f7 100%);
+}
+
+.fundo-pessego {
+  --fundo-quadro: linear-gradient(160deg, #ffe4d4 0%, #fff4ec 55%, #fde7da 100%);
+}
+
+.fundo-areia {
+  --fundo-quadro: linear-gradient(160deg, #f3e8d2 0%, #faf5ea 55%, #efe4cf 100%);
+}
+
+.fundo-rosa {
+  --fundo-quadro: linear-gradient(160deg, #fde0ec 0%, #fff2f7 55%, #f9e1ea 100%);
+}
+
+.fundo-aurora {
+  --fundo-quadro: linear-gradient(135deg, #d6f0ff 0%, #e6e3ff 45%, #dff7ec 100%);
+}
+
+.fundo-oceano {
+  --fundo-quadro: linear-gradient(135deg, #cfe9f7 0%, #dcf3f1 50%, #d4e4fa 100%);
+}
+
+.fundo-por_do_sol {
+  --fundo-quadro: linear-gradient(135deg, #ffe0cc 0%, #ffd9e2 50%, #f0dcff 100%);
+}
+
+.fundo-padrao {
+  --fundo-quadro: var(--fundo);
+}
+
+.central[class*="fundo-"] {
+  background: var(--fundo-quadro);
+}
+
+.dialogo .fundos {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* Com .cor-opcao, para vencer o background: var(--cor) das amostras de cor dos diálogos. */
+.dialogo .cor-opcao.fundo-opcao {
+  height: 36px;
+  background: var(--fundo-quadro);
+}
+
+/* Meu Dia: os cartões das próximas datas, agrupados, de todas as categorias. */
+.categoria-meu-dia {
+  margin-bottom: 4px;
+}
+
+.categoria-meu-dia .icone {
+  color: var(--acento);
+}
+
+.meu-dia {
+  width: min(760px, calc(100% - 32px));
+  margin: 32px auto;
+}
+
+.meu-dia-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.meu-dia-topo h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.meu-dia-topo h1 .icone {
+  width: 30px;
+  height: 30px;
+  color: var(--acento);
+}
+
+.meu-dia-data {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+}
+
+.meu-dia-topo .botao {
+  width: auto;
+  margin-top: 0;
+}
+
+.meu-dia-grupo {
+  margin-bottom: 24px;
+}
+
+.meu-dia-grupo h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.meu-dia-atrasadas h2 {
+  color: var(--perigo);
+}
+
+.meu-dia-grupo ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meu-dia-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--borda);
+  border-left: 5px solid var(--cor-projeto);
+  border-right-width: 4px;
+  border-radius: 10px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  text-decoration: none;
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.meu-dia-item:hover,
+.meu-dia-item:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-forte);
+}
+
+/* A borda direita mostra a prioridade, com as cores do cartão do quadro. */
+.meu-dia-item.prioridade-baixa {
+  border-right-color: #1a8cff;
+}
+
+.meu-dia-item.prioridade-media {
+  border-right-color: #ff8a00;
+}
+
+.meu-dia-item.prioridade-alta {
+  border-right-color: #e8202a;
+}
+
+/* Largura fixa, para os nomes ficarem alinhados em todos os grupos. */
+.meu-dia-hora {
+  flex: 0 0 96px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.meu-dia-atrasadas .meu-dia-hora,
+.meu-dia-atrasadas .meu-dia-nome {
+  color: var(--perigo);
+}
+
+.meu-dia-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.meu-dia-nome {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.meu-dia-lista {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.meu-dia-lista .icone,
+.meu-dia-oculta .icone {
+  width: 14px;
+  height: 14px;
+}
+
+.meu-dia-oculta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.meu-dia-responsavel .avatar {
+  width: 26px;
+  height: 26px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meu-dia-item {
+    transition: none;
+  }
+
+  .meu-dia-item:hover,
+  .meu-dia-item:focus-visible {
+    transform: none;
+  }
+}
+
+.meu-dia-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Calendário: mês (grade de 7 colunas) e semana. No celular, os dias ficam um embaixo do outro. */
+.calendario-pagina {
+  width: min(1240px, calc(100% - 32px));
+  margin: 24px auto 32px;
+}
+
+.calendario-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendario-topo h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.calendario-topo h1 .icone {
+  width: 28px;
+  height: 28px;
+  color: var(--acento);
+}
+
+.calendario-acoes,
+.calendario-navegar,
+.calendario-visoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendario-acoes .botao {
+  width: auto;
+  margin-top: 0;
+}
+
+.calendario-navegar .botao-topo {
+  font-size: 1.4rem;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.calendario-dica {
+  margin: 8px 0 14px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.calendario {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendario-semana-nome {
+  padding: 0 6px;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.calendario-dia {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 118px;
+  padding: 6px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+}
+
+.calendario-semana .calendario-dia {
+  min-height: calc(60vh / var(--escala));
+}
+
+.calendario-fora-do-mes {
+  background: transparent;
+}
+
+.calendario-fora-do-mes .calendario-numero {
+  color: var(--texto-suave);
+  opacity: 0.6;
+}
+
+.calendario-hoje {
+  border-color: var(--acento);
+  box-shadow: inset 0 0 0 1px var(--acento);
+}
+
+.calendario-hoje .calendario-numero {
+  color: var(--acento-texto);
+}
+
+.calendario-alvo {
+  background: var(--superficie-2);
+  outline: 2px dashed var(--acento);
+  outline-offset: -2px;
+}
+
+.calendario-numero {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.calendario-dia-nome {
+  display: none;
+}
+
+.calendario-cartoes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.calendario-mes .calendario-cartoes {
+  max-height: 148px;
+}
+
+.calendario-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--cor-projeto);
+  border-right-width: 3px;
+  border-radius: 6px;
+  background: var(--fundo);
+  font-size: 0.8rem;
+}
+
+.calendario-item[data-url-previsao] {
+  cursor: grab;
+}
+
+.calendario-item.prioridade-baixa {
+  border-right-color: #1a8cff;
+}
+
+.calendario-item.prioridade-media {
+  border-right-color: #ff8a00;
+}
+
+.calendario-item.prioridade-alta {
+  border-right-color: #e8202a;
+}
+
+.calendario-item a {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 6px;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.calendario-hora {
+  flex: 0 0 auto;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendario-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendario-semana .calendario-nome {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.calendario-vencida .calendario-nome,
+.calendario-vencida .calendario-hora {
+  color: var(--perigo);
+}
+
+.calendario-oculta .icone {
+  width: 12px;
+  height: 12px;
+  color: var(--texto-suave);
+}
+
+/* A alça só aparece no toque, onde ela é o único jeito de arrastar. */
+.calendario-alca {
+  display: none;
+  padding: 0 2px 0 4px;
+  color: var(--texto-suave);
+  touch-action: none;
+  cursor: grab;
+}
+
+@media (pointer: coarse) {
+  .calendario-alca {
+    display: block;
+  }
+}
+
+.calendario-arrastando {
+  opacity: 0.35;
+}
+
+.calendario-fantasma {
+  position: fixed;
+  z-index: 100;
+  box-shadow: var(--sombra-forte);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .calendario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendario-semana-nome,
+  .calendario-dia-vazio:not(.calendario-hoje) {
+    display: none;
+  }
+
+  .calendario-dia,
+  .calendario-semana .calendario-dia {
+    min-height: 0;
+  }
+
+  .calendario-dia-nome {
+    display: inline;
+  }
+
+  .calendario-mes .calendario-cartoes {
+    max-height: none;
+  }
+
+  .calendario-fora-do-mes {
+    display: none;
+  }
+}
+
+/* Progresso da lista de tarefas no cartão. */
+.tarefa-progresso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tarefa-progresso-barra {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--superficie-2);
+}
+
+.tarefa-progresso-barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--acento);
+}
+
+.tarefa-progresso-texto {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tarefa-progresso-completo .tarefa-progresso-barra span {
+  background: #22a35a;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tarefa-progresso-barra span {
+    transition: width 0.3s ease-out;
+  }
+}
+
+/* Resumo da semana, no topo do Meu Perfil. */
+.resumo-semana {
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.resumo-semana h2 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.resumo-semana dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+/* Os números ficam no pé de cada quadro, alinhados mesmo quando um rótulo quebra a linha. */
+.resumo-semana dl > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--fundo);
+}
+
+.resumo-semana dt {
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+}
+
+.resumo-semana dd {
+  margin: 2px 0 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumo-destaque dd {
+  color: var(--acento-texto);
+}
+
+.resumo-alerta dd {
+  color: var(--perigo);
+}
+
+.resumo-explicacao {
+  margin: 8px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .resumo-semana dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Aviso discreto da atualização em tempo real; não é o diálogo #notificacao, para não interromper. */
+.aviso-atualizacao {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 90;
+  max-width: calc(100vw / var(--escala) - 32px);
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--cabecalho);
+  color: #fff;
+  box-shadow: var(--sombra-forte);
+  font-size: 0.9rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.aviso-atualizacao.aviso-visivel {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Histórico do cartão. O botão fica à esquerda, longe de Cancelar e Salvar. */
+.dialogo-acoes .botao-historico {
+  margin-right: auto;
+}
+
+.dialogo-acoes .botao-historico[hidden] {
+  display: none;
+}
+
+.dialogo-historico {
+  width: min(560px, calc(100vw / var(--escala) - 32px));
+}
+
+.historico-conteudo {
+  max-height: calc(60dvh / var(--escala));
+  overflow-y: auto;
+}
+
+.historico-conteudo[aria-busy="true"] {
+  min-height: 80px;
+}
+
+.historico-nome {
+  margin: 0 0 12px;
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.historico-comentar {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.historico-comentar .botao {
+  justify-self: end;
+  width: auto;
+  margin-top: 0;
+}
+
+.historico {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historico-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.historico-item .avatar,
+.historico-sem-conta {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.historico-sem-conta {
+  border-radius: 50%;
+  background: var(--superficie-2);
+}
+
+.historico-linha {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.historico-linha time {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+}
+
+.historico-texto {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--fundo);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.historico-vazio {
+  color: var(--texto-suave);
+}
+
+/* Atalhos do teclado (tecla ?). */
+.atalhos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 16px;
+  align-items: center;
+  margin: 12px 0 4px;
+}
+
+.atalhos dt {
+  justify-self: end;
+}
+
+.atalhos dd {
+  margin: 0;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 26px;
+  padding: 2px 8px;
+  border: 1px solid var(--borda);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  background: var(--fundo);
+  font: 600 0.9rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-align: center;
+}
+
+/* Modo foco: o cabeçalho e a barra lateral saem, e os projetos ocupam a tela. */
+.modo-foco .topo,
+.modo-foco .lateral {
+  display: none;
+}
+
+.modo-foco .barra {
+  padding-block: 8px;
+}
+
+/* Microanimações: só para quem não pediu menos movimento ao sistema. */
+@media (prefers-reduced-motion: no-preference) {
+  .quadro .tarefa {
+    animation: tarefa-entrar 0.22s ease-out both;
+  }
+
+  .tarefa-atualizada {
+    animation: tarefa-realce 0.6s ease-out both;
+  }
+
+  .tarefa-saindo {
+    overflow: hidden;
+    animation: tarefa-sair 0.32s ease-in forwards;
+    pointer-events: none;
+  }
+
+  .tarefa-concluindo .botao-concluir {
+    animation: concluir-pulso 0.32s ease-out;
+    color: var(--acento);
+  }
+
+  .botao-concluir:active svg {
+    transform: scale(0.85);
+  }
+
+  .botao-concluir svg {
+    transition: transform 0.12s ease-out;
+  }
+
+  .vazio {
+    animation: tarefa-entrar 0.3s ease-out both;
+  }
+
+  @keyframes tarefa-entrar {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @keyframes tarefa-realce {
+    from {
+      box-shadow: 0 0 0 3px var(--acento);
+    }
+  }
+
+  @keyframes tarefa-sair {
+    40% {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96);
+      height: 0;
+      margin-block: -4px;
+      padding-block: 0;
+      border-width: 0;
+    }
+  }
+
+  @keyframes concluir-pulso {
+    50% {
+      transform: scale(1.35);
+    }
+  }
+}
+
+.dialogo {
+  width: min(480px, calc(100vw / var(--escala) - 32px));
+  max-height: calc(100dvh / var(--escala) - 32px);
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-forte);
+}
+
+.dialogo::backdrop {
+  background: rgba(30, 30, 30, 0.45);
+}
+
+.dialogo h2 {
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+
+.dialogo label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dialogo .opcao-marcada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+.campos-lado-a-lado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0 12px;
+}
+
+#dialogo-tarefa {
+  width: min(1032px, calc(100vw / var(--escala) - 32px));
+}
+
+.colunas-da-tarefa {
+  display: grid;
+  min-height: 456px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "iniciais descricao"
+    "finais descricao";
+  gap: 0 20px;
+}
+
+.tarefa-campos-iniciais {
+  grid-area: iniciais;
+}
+
+.tarefa-campos-finais {
+  grid-area: finais;
+}
+
+.tarefa-campo-descricao {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-titulo {
+  margin: 10px 0 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.editor-barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--borda);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--superficie-2);
+}
+
+.editor-barra .icone {
+  width: 18px;
+  height: 18px;
+}
+
+.editor-barra .editor-ativo {
+  background: var(--acento);
+  color: var(--acento-contraste);
+}
+
+.dialogo .editor-cor {
+  margin: 0;
+  cursor: pointer;
+}
+
+.dialogo .editor-cor input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.editor-visualizar-botao {
+  margin-left: auto;
+}
+
+/* O diálogo da demanda continua aberto por trás: só a Descrição ocupa a tela. */
+.tarefa-campo-descricao.editor-tela-inteira {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  background: var(--superficie);
+}
+
+.editor-tela-inteira .editor-titulo {
+  display: none;
+}
+
+.editor-tela-inteira .editor-barra {
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+
+.editor-tela-inteira .editor {
+  border: 0;
+  border-radius: 0;
+}
+
+.dialogo .editor-cor:has(input:disabled) .icone {
+  opacity: 0.35;
+}
+
+.dialogo .editor-cor input:disabled {
+  cursor: default;
+}
+
+.editor-visualizando .editor {
+  cursor: default;
+}
+
+.editor-visualizando .editor:focus {
+  outline: 0;
+}
+
+.editor-cor-faixa {
+  stroke: var(--editor-cor, #d32f2f);
+  stroke-width: 3;
+}
+
+/* A altura vem da coluna: um texto longo rola aqui dentro, sem esticar a janela. */
+.editor {
+  overflow-y: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 0 0 8px 8px;
+  background: var(--superficie);
+  overflow-wrap: anywhere;
+}
+
+.editor:focus {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: -2px;
+}
+
+/* No celular a Descrição volta a ficar entre a Previsão de Execução e o Local. */
+@media (max-width: 640px) {
+  .colunas-da-tarefa {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      "iniciais"
+      "descricao"
+      "finais";
+  }
+
+  .editor {
+    flex: none;
+    min-height: 160px;
+    max-height: calc(50dvh / var(--escala));
+  }
+
+  .editor-tela-inteira .editor {
+    flex: 1 1 0;
+    max-height: none;
+  }
+}
+
+.cores {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.cores legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dialogo .cor-opcao,
+.cartao-grupo .cor-opcao {
+  position: relative;
+  display: block;
+  height: 40px;
+  margin: 0;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--cor);
+  cursor: pointer;
+}
+
+.cor-opcao input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dialogo .icone-opcao,
+.cartao-grupo .icone-opcao {
+  display: grid;
+  place-items: center;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.dialogo .icone-opcao:has(input:checked),
+.cartao-grupo .icone-opcao:has(input:checked) {
+  background: var(--acento);
+  color: var(--acento-contraste);
+}
+
+.cor-opcao:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--superficie), 0 0 0 4px var(--texto);
+}
+
+.cor-opcao:has(input:focus-visible) {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 4px;
+}
+
+.dialogo-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.cartao-central {
+  width: min(420px, calc(100% - 32px));
+  margin: 40px auto;
+  padding: 24px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.cartao-central h1 {
+  font-size: 1.4rem;
+}
+
+.perfil label {
+  display: block;
+  margin: 12px 0 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.perfil .erro-campo {
+  margin: 4px 0 0;
+  color: var(--perigo);
+  font-size: 0.9rem;
+}
+
+.avatares {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.avatares legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Meu Perfil: o título Ícone é um h2, no tamanho do de Automação. */
+.avatares h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.perfil .avatar-opcao {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.avatar-opcao input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.avatar-opcao:has(input:checked) {
+  box-shadow: 0 0 0 3px var(--acento);
+}
+
+.avatar-opcao:has(input:focus-visible) {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 4px;
+}
+
+.perfil input:read-only {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.perfil .botao {
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* Meu Perfil: duas colunas (resumo e dados da pessoa à esquerda; ícone, cor e Automação à direita),
+   ícones em 2 linhas com rolagem. No celular, uma coluna só. */
+.perfil-largo {
+  width: min(1040px, calc(100% - 32px));
+}
+
+.perfil-colunas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  align-items: start;
+}
+
+.perfil-coluna > :first-child {
+  margin-top: 0;
+}
+
+/* Na coluna, o resumo cabe em 2 x 2 quadros, sem a linha que o separava do formulário. */
+.perfil-coluna .resumo-semana {
+  margin-bottom: 4px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.perfil-coluna .resumo-semana dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.perfil-foto {
+  margin: 4px 0 8px;
+}
+
+.perfil .perfil-foto .botao {
+  width: auto;
+  margin-top: 0;
+}
+
+.perfil .avatar-opcao[hidden] {
+  display: none;
+}
+
+.perfil-coluna .avatares {
+  margin-top: 0;
+}
+
+/* Ajustar minha imagem do perfil: a área de 400 x 400 px (menor no celular), com o círculo de
+   150 px de raio no centro. Fora dele, a imagem aparece desfocada. */
+.dialogo-foto {
+  width: min(464px, calc(100vw / var(--escala) - 32px));
+}
+
+.foto-explicacao {
+  margin: 0 0 12px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.foto-area {
+  position: relative;
+  overflow: hidden;
+  width: min(400px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #1f2937;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.foto-area:focus-visible {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 3px;
+}
+
+.foto-area.foto-arrastando {
+  cursor: grabbing;
+}
+
+.foto-imagem {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+.foto-desfocada {
+  filter: blur(6px) brightness(0.85);
+}
+
+/* circle(37.5%) numa área quadrada é o raio de 150 px dos 400. */
+.foto-recorte {
+  position: absolute;
+  inset: 0;
+  clip-path: circle(37.5% at 50% 50%);
+}
+
+.foto-circulo {
+  position: absolute;
+  top: 12.5%;
+  left: 12.5%;
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+
+.foto-tamanho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.foto-tamanho label {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.foto-tamanho input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.foto-tamanho .botao-icone {
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.perfil-coluna .automacao {
+  margin-top: 16px;
+}
+
+.perfil-largo .avatares {
+  display: block;
+  /* Sem isto, o fieldset cresce até caber os 10 ícones da linha e a página rola para o lado. */
+  min-width: 0;
+}
+
+.avatares-opcoes {
+  display: grid;
+  grid-auto-columns: 64px;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, 64px);
+  gap: 10px;
+  padding: 6px 6px 10px;
+  overflow-x: auto;
+}
+
+.cores-da-aplicacao {
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.cores-da-aplicacao legend,
+.automacao h2 {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cores-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.perfil .cor-opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+/* Só no perfil: sem o .perfil, estas regras valiam também para as cores e ícones dos diálogos. */
+.perfil .cor-opcao::before {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amostra);
+  content: "";
+}
+
+.perfil .cor-opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.perfil .cor-opcao:has(input:checked) {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 2px var(--acento);
+}
+
+.perfil .cor-opcao:has(input:focus-visible) {
+  outline: 2px solid var(--acento-texto);
+  outline-offset: 2px;
+}
+
+.automacao {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+}
+
+.automacao h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+
+.automacao select {
+  width: 100%;
+}
+
+.automacao-explicacao {
+  margin: 8px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.perfil-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.perfil-largo .perfil-acoes .botao {
+  width: auto;
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .perfil-colunas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .perfil-coluna + .perfil-coluna {
+    margin-top: 16px;
+  }
+}
+
+.cartao-central .subtitulo {
+  margin: -4px 0 4px;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.formulario-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.formulario-acoes .botao {
+  flex: 1;
+}
+
+.cartao-central.usuarios {
+  width: min(880px, calc(100% - 32px));
+}
+
+.usuarios-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.usuarios-topo h1 {
+  margin: 0;
+}
+
+.usuarios-topo .botao {
+  gap: 6px;
+}
+
+.tabela-rolagem {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.tabela th, .tabela td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tabela th {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tabela td:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+
+.tabela-acoes {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.campo-senha {
+  position: relative;
+  display: block;
+}
+
+.campo-senha input {
+  padding-right: 44px;
+}
+
+.ver-senha {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  bottom: 0;
+  margin: auto 0;
+  height: 32px;
+}
+
+.ver-senha span {
+  display: grid;
+}
+
+.ver-senha span[hidden] {
+  display: none;
+}
+
+.formulario-conta hr {
+  display: none;
+}
+
+.formulario-conta label {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.formulario-conta .fs-div {
+  margin-bottom: 12px;
+}
+
+.formulario-conta .fs-gap {
+  margin-top: 12px;
+}
+
+.formulario-conta input[type="submit"] {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.formulario-conta .fs-error-msg {
+  color: var(--perigo);
+}
+
+.formulario-conta ul {
+  padding-left: 18px;
+}
+
+.menu-conta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  /* As caixas ocupam a largura do cabeçalho: alinhadas ao ícone, sairiam pela esquerda da tela. */
+  .topo-acoes .menu {
+    position: static;
+  }
+
+  .topo-acoes .menu-caixa {
+    top: 100%;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
+  .painel {
+    flex-direction: column;
+  }
+
+  .lateral {
+    flex-basis: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .lateral-oculta .lateral {
+    flex-basis: auto;
+  }
+
+  .categorias {
+    flex-flow: row wrap;
+  }
+
+  .lateral-oculta .categoria-link {
+    width: 36px;
+  }
+
+  .quadro {
+    scroll-snap-type: x proximity;
+  }
+
+  .projeto {
+    scroll-snap-align: center;
+  }
+
+  .botao-icone {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+@media (hover: none) {
+  .projeto-alca {
+    padding: 8px 4px;
+    font-size: 1.3rem;
+  }
+
+  .tarefa {
+    cursor: default;
+  }
+
+  .tarefa-alca {
+    flex-basis: 34px;
+    font-size: 1.3rem;
+  }
+}
+
+.grupo-nome {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.grupo-nome .icone {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.grupo-nome-texto {
+  color: var(--texto);
+  overflow-wrap: anywhere;
+}
+
+.tabela-grupos td:nth-child(2) {
+  overflow-wrap: normal;
+}
+
+.tabela-grupos th:nth-child(2),
+.tabela-grupos td:nth-child(2),
+.tabela-grupos th:nth-child(3) {
+  text-align: center;
+}
+
+.tabela-grupos .tabela-acoes {
+  width: auto;
+  white-space: normal;
+  text-align: right;
+}
+
+.tabela-grupos .tabela-acoes > * {
+  margin: 2px 0 2px 4px;
+}
+
+.tabela .ordenar {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tabela .ordenar:hover {
+  color: var(--acento-texto);
+}
+
+.acao-em-linha {
+  display: inline-block;
+}
+
+.cartao-central.cartao-grupo {
+  width: min(560px, calc(100% - 32px));
+}
+
+.cartao-grupo .cores.icones-do-grupo {
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+}
+
+.cartao-grupo .cores .icone-opcao .icone {
+  width: 22px;
+  height: 22px;
+}
+
+.perfil .rotulo-grupo {
+  margin: 16px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cartao-grupo .cores {
+  margin-top: 8px;
+}
+
+.grupo-descricao {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+/* Visualizar Membros: o ícone (desenho ou foto) ao lado do nome. */
+.membro-nome {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.membro-icone {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+
+.busca-membros {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.busca-membros input {
+  flex: 1;
+  min-width: 0;
+}
+
+.compartilhar-alerta {
+  margin: 4px 0 0;
+  color: var(--perigo);
+  font-size: 12px;
+}
+
+.configuracoes-alerta {
+  margin: 0 0 12px;
+}
+
+.banco-em-uso {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.banco-em-uso > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.banco-em-uso dt {
+  min-width: 120px;
+  color: var(--texto-suave);
+}
+
+.banco-em-uso dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dica-da-busca {
+  margin: -4px 0 12px;
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+.dialogo-somente-leitura .editor-barra,
+.dialogo-somente-leitura [data-adicionar-item],
+.dialogo-somente-leitura [data-ordenar-itens],
+.dialogo-somente-leitura [data-remover-item],
+.dialogo-somente-leitura .item-alca,
+.dialogo-somente-leitura #tarefa-anexar,
+.dialogo-somente-leitura [data-renomear-anexo],
+.dialogo-somente-leitura .anexo-item [data-excluir],
+.dialogo-somente-leitura [data-atualizar-video],
+.dialogo-somente-leitura .dialogo-acoes [type="submit"] {
+  display: none;
+}
+
+.dialogo-somente-leitura .item-da-lista {
+  cursor: default;
+}
+
+.lateral .lateral-subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 12px 4px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.lateral .lateral-subtitulo .icone {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.barra-compartilhada {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.botao-compartilhar {
+  gap: 6px;
+}
+
+.barra-acoes {
+  flex-wrap: wrap;
+}
+
+.compartilhamentos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 40px;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  list-style: none;
+}
+
+.compartilhamentos li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+}
+
+.compartilhamento-grupo .icone {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.compartilhamento-nome {
+  font-weight: 600;
+}
+
+.compartilhamento-modo {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Mesma aparência da dica de data-dica, com espaço para texto formatado. */
+.dica-formatada {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  display: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--texto);
+  color: var(--fundo);
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.compartilhamentos li:focus-visible .dica-formatada {
+  display: block;
+}
+
+@media (hover: hover) {
+  .compartilhamentos li:hover .dica-formatada {
+    display: block;
+  }
+}
+
+.compartilhamento-editar {
+  background: var(--acento);
+  color: var(--acento-contraste);
+}
+
+.compartilhamento-visualizar {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.compartilhar-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compartilhar-titulo .icone {
+  flex: none;
+}
+
+.compartilhar-explicacao {
+  margin: 0 0 12px;
+  color: var(--texto-suave);
+  font-size: 0.92rem;
+}
+
+.tabela-compartilhar td:nth-child(2),
+.tabela-compartilhar th:nth-child(2) {
+  text-align: center;
+}
+
+.compartilhar-acoes {
+  margin-top: 16px;
+}
+
+.captcha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.captcha-imagem {
+  display: block;
+  max-width: calc(100% - 48px);
+  height: auto;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: #fff;
+}
+
+#captcha {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/* 100 px mais larga que a caixa da demanda: a diferença vai toda para o player. */
+#dialogo-video {
+  width: min(1132px, calc(100vw / var(--escala) - 32px));
+}
+
+.colunas-do-video {
+  display: grid;
+  /* Os campos mantêm a largura que tinham na caixa de 1032 px (40% da largura útil mais 80 px);
+     o player fica com o restante, que inclui os 100 px a mais da caixa. */
+  grid-template-columns: minmax(0, calc((100% - 120px) * 0.4 + 80px)) minmax(0, 1fr);
+  gap: 0 20px;
+  align-items: start;
+}
+
+.colunas-do-video textarea {
+  resize: vertical;
+}
+
+.dialogo .rotulo-do-campo {
+  margin: 10px 0 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Mesma aparência dos campos em somente leitura, com rolagem e links. */
+.video-descricao {
+  box-sizing: border-box;
+  height: 128px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+.video-descricao a {
+  color: var(--acento-texto);
+}
+
+.video-player {
+  margin-top: 10px;
+}
+
+.video-player iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 8px;
+  background: #000;
+}
+
+#dialogo-video input:read-only,
+#dialogo-video textarea:read-only,
+#dialogo-video-novo input:read-only,
+#dialogo-video-novo textarea:read-only {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.dialogo-video-novo textarea {
+  resize: vertical;
+}
+
+/* O player vem primeiro no celular, como a Descrição na demanda. */
+@media (max-width: 760px) {
+  .colunas-do-video {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .video-player {
+    order: -1;
+  }
+}
+
+.video-miniatura {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: var(--superficie-2);
+  object-fit: cover;
+}
+
+/* Simplificado: miniatura com 40% da largura, à esquerda do título. */
+.video-simplificado .tarefa-corpo {
+  display: grid;
+  grid-template-columns: 40% minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+}
+
+/* O Vimeo não informou a miniatura: um retângulo neutro no lugar dela. */
+.video-sem-miniatura {
+  background: linear-gradient(135deg, #e3e7ec, #cfd5dc);
+}
+
+.video-simplificado .video-miniatura {
+  margin-bottom: 0;
+  border-radius: 4px;
+}
+
+.video-simplificado .tarefa-nome {
+  font-size: 12px;
+}
+
+.video-simplificado .video-resumo,
+.video-simplificado .tarefa-marcacoes {
+  display: none;
+}
+
+.video-resumo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.video-resumo .icone {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.tabela-planos th:nth-child(3),
+.tabela-planos .tabela-quantidade,
+.tabela-planos th:last-child {
+  text-align: center;
+}
+
+.tabela-planos .tabela-capacidades {
+  white-space: nowrap;
+}
+
+.tabela-planos .tabela-acoes {
+  text-align: right;
+}
+
+.tabela-planos .tabela-acoes > * {
+  margin: 2px 0 2px 4px;
+}
+
+.selo-padrao {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--acento);
+  color: var(--acento-contraste);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.perfil .opcao-marcada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  cursor: pointer;
+}
+
+.perfil .opcao-marcada input {
+  width: auto;
+  min-height: 0;
+}
+
+.dica-do-campo {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+/* Botão com texto desabilitado, como o Excluir do plano que tem usuários. */
+.botao:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Administrador e Plano, a 3ª e a 4ª colunas da lista de usuários. */
+.tabela-usuarios th:nth-child(3),
+.tabela-usuarios td:nth-child(3),
+.tabela-usuarios th:nth-child(4),
+.tabela-usuarios td:nth-child(4),
+.tabela-usuarios th:last-child {
+  text-align: center;
+}
+
+/* Página sem conexão (offline.html), guardada pelo service worker. */
+.offline-icone {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  fill: none;
+  stroke: var(--texto-suave);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Cartão generalista: os campos iniciais e as seções acrescentadas pelo usuário. */
+.tarefa-coluna-direita {
+  display: flex;
+  flex-direction: column;
+  grid-area: descricao;
+  gap: 4px;
+  min-height: 0;
+}
+
+.tarefa-coluna-direita > .tarefa-campo-descricao,
+.tarefa-coluna-direita > .tarefa-campo-itens {
+  flex: 1 1 0;
+}
+
+.tarefa-coluna-direita > [hidden] {
+  display: none;
+}
+
+.secao-topo,
+.secao-topo-acoes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.secao-topo {
+  justify-content: space-between;
+}
+
+.remover-secao[hidden],
+.adicionar-secoes[hidden],
+.adicionar-secoes-botoes [hidden],
+.anexos-area[hidden] {
+  display: none;
+}
+
+.adicionar-secoes-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adicionar-secoes-botoes .botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adicionar-secoes-botoes .icone {
+  width: 16px;
+  height: 16px;
+}
+
+/* Com várias seções à direita, cada uma tem uma altura mínima e a caixa cresce. */
+.tarefa-generalista .tarefa-coluna-direita > .tarefa-campo-descricao {
+  min-height: 220px;
+}
+
+.tarefa-generalista .tarefa-coluna-direita > .tarefa-campo-itens {
+  min-height: 200px;
+}
+
+/* Abas do generalista: uma seção à mostra por vez, com a altura de toda a coluna. */
+.abas-da-tarefa {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  margin-top: 10px;
+  border-bottom: 1px solid var(--borda);
+  overflow-x: auto;
+}
+
+.abas-da-tarefa[hidden],
+.aba-da-tarefa[hidden] {
+  display: none;
+}
+
+.aba-da-tarefa {
+  margin-bottom: -1px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aba-da-tarefa:hover {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+.aba-da-tarefa[aria-selected="true"] {
+  border-color: var(--borda);
+  background: var(--superficie);
+  color: var(--acento-texto);
+  box-shadow: inset 0 3px 0 var(--acento);
+}
+
+/* O nome da seção já está na aba: o título fica só para os leitores de tela. */
+.tarefa-com-abas .tarefa-coluna-direita .editor-titulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tarefa-com-abas .tarefa-coluna-direita .secao-topo,
+.tarefa-com-abas .tarefa-coluna-direita .itens-topo {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.tarefa-com-abas .tarefa-coluna-direita > [role="tabpanel"] {
+  min-height: 360px;
+}
+
+/* Sem Descrição, Lista de Tarefas e Vídeo, a caixa fica com uma coluna só. */
+#dialogo-tarefa.tarefa-sem-coluna-direita {
+  width: min(560px, calc(100vw / var(--escala) - 32px));
+}
+
+.tarefa-sem-coluna-direita .colunas-da-tarefa {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "iniciais"
+    "finais";
+}
+
+.tarefa-sem-coluna-direita .tarefa-coluna-direita {
+  display: none;
+}
+
+.editor-tela-inteira .secao-topo {
+  display: none;
+}
+
+.video-endereco-linha {
+  display: flex;
+  gap: 8px;
+}
+
+.video-endereco-linha input {
+  flex: 1;
+  min-width: 0;
+}
+
+.video-endereco-linha .botao {
+  flex: none;
+}
+
+.tarefa-video-player {
+  margin-top: 10px;
+}
+
+.tarefa-video-player iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 8px;
+  background: #000;
+}
+
+.tarefa-video-titulo {
+  margin: 8px 0 2px;
+  font-weight: 600;
+}
+
+.tarefa-video-detalhes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.tarefa-video-detalhes [hidden] {
+  display: none;
+}
+
+/* No cartão do quadro, o vídeo do generalista vem depois da descrição e das tarefas, sempre
+   no formato simplificado do cartão de vídeo: miniatura em 40% da largura e título em 12 px. */
+.tarefa-video-do-cartao {
+  display: grid;
+  grid-template-columns: 40% minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  margin-top: 8px;
+}
+
+.tarefa-video-do-cartao .video-miniatura {
+  margin-bottom: 0;
+  border-radius: 4px;
+}
+
+.tarefa-video-do-cartao-titulo {
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .video-endereco-linha {
+    flex-direction: column;
+  }
+}
+
+/* ---------- Celular: menos elementos e o quadro em primeiro plano. Fica no fim do arquivo para
+   valer sobre as regras anteriores. Os 640 px são da tela (o zoom do <html> não muda a media query). */
+@media (max-width: 640px) {
+  /* Cabeçalho numa linha: logotipo menor e o nome encolhe antes dos botões. */
+  .topo {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 6px 12px;
+  }
+
+  .marca {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  /* O width="87" do <img> manteria a largura e achataria o ícone. */
+  .marca-logo {
+    width: auto;
+    height: 34px;
+  }
+
+  .marca-nome {
+    overflow: hidden;
+    font-size: 0.92rem;
+    text-overflow: ellipsis;
+  }
+
+  .topo-acoes {
+    flex: none;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  /* Categorias numa faixa que rola para os lados, como pílulas; o + fica no fim. A faixa ignora a
+     lateral recolhida, porque já ocupa uma linha só. */
+  .lateral,
+  .lateral-oculta .lateral {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    scrollbar-width: none;
+  }
+
+  .lateral::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lateral-topo {
+    order: 9;
+    flex: none;
+  }
+
+  .lateral-topo h2,
+  .alternar-lateral,
+  .lateral-rodape {
+    display: none;
+  }
+
+  .lateral-oculta .nova-categoria {
+    display: grid;
+  }
+
+  .categorias {
+    flex: none;
+    flex-flow: row nowrap;
+    gap: 6px;
+  }
+
+  .categoria-item {
+    flex: none;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+  }
+
+  .categoria-ativa {
+    border-color: var(--acento);
+  }
+
+  .categoria-link,
+  .lateral-oculta .categoria-link {
+    width: auto;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  .lateral-oculta .categoria-link span {
+    display: inline;
+  }
+
+  /* Editar e excluir só na categoria aberta. */
+  .categoria-item:not(.categoria-ativa) .botao-icone {
+    display: none;
+  }
+
+  .categoria-ativa .botao-icone,
+  .lateral-oculta .categoria-ativa .botao-icone {
+    display: inline-grid;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .categoria-ativa .botao-icone:last-child {
+    margin-right: 4px;
+  }
+
+  /* "Compartilhadas comigo" vira só o ícone, separando as categorias recebidas. */
+  .lateral h2.lateral-subtitulo,
+  .lateral-oculta .lateral h2.lateral-subtitulo {
+    display: flex;
+    flex: none;
+    padding: 0 0 0 8px;
+    border-left: 1px solid var(--borda);
+  }
+
+  .lateral-subtitulo span {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Barra do quadro numa linha: o nome da categoria já está na faixa (o título continua para os
+     leitores de tela), o Compartilhar fica só com o ícone e o grupo, só com o ícone e o modo. */
+  .barra {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .barra h1 {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .barra-compartilhada {
+    width: 100%;
+    margin: 0;
+  }
+
+  .barra-acoes {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .botao-compartilhar {
+    width: 36px;
+    min-height: 36px;
+    height: 36px;
+    padding: 0;
+  }
+
+  .botao-compartilhar .rotulo-do-botao,
+  .compartilhamento-nome {
+    display: none;
+  }
+
+  .quadro {
+    gap: 10px;
+    padding: 2px 12px 16px;
+    scroll-padding: 0 12px;
+  }
+
+  .projeto {
+    scroll-snap-align: start;
+  }
+
+  /* As caixas ocupam a tela inteira, com os botões sempre à mostra no pé. O :is com um id dá a
+     especificidade para vencer as larguras definidas por id (#dialogo-tarefa, #dialogo-video). */
+  :is(#dialogo-tarefa, .dialogo):not(.notificacao) {
+    width: calc(100vw / var(--escala));
+    max-width: none;
+    height: calc(100dvh / var(--escala));
+    max-height: none;
+    margin: 0;
+    overflow-y: auto;
+    padding: 16px 16px 0;
+    border: 0;
+    border-radius: 0;
+    overscroll-behavior: contain;
+  }
+
+  .dialogo:not(.notificacao) > form,
+  .dialogo:not(.notificacao) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dialogo:not(.notificacao):not([open]) {
+    display: none;
+  }
+
+  .dialogo:not(.notificacao) > form {
+    flex: 1 0 auto;
+  }
+
+  .dialogo:not(.notificacao) .dialogo-acoes {
+    position: sticky;
+    z-index: 5;
+    bottom: 0;
+    flex-wrap: wrap;
+    margin: auto -16px 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--borda);
+    background: var(--superficie);
+  }
+
+  .dialogo:not(.notificacao) .dialogo-acoes .botao {
+    flex: 1 1 auto;
+  }
+
+  /* Páginas em caixa (Meu Perfil, Usuários, Grupos...): menos margem em volta. */
+  .cartao-central,
+  .perfil-largo {
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    padding: 16px;
+  }
+
+  .usuarios-topo {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Tabelas: cada linha vira um cartão, com o rótulo de cada valor à esquerda. Os cabeçalhos
+     que ordenam ficam como botões acima dos cartões; os demais somem. */
+  .tabela-rolagem {
+    overflow: visible;
+  }
+
+  .tabela,
+  .tabela tbody,
+  .tabela tr,
+  .tabela td {
+    display: block;
+    width: auto;
+  }
+
+  .tabela thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .tabela thead:not(:has(a)),
+  .tabela th:not(:has(a)) {
+    display: none;
+  }
+
+  .tabela th {
+    padding: 0;
+    border: 0;
+  }
+
+  .tabela th .ordenar {
+    display: inline-flex;
+    padding: 4px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+  }
+
+  .tabela tbody tr {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    background: var(--superficie);
+  }
+
+  /* O :nth-child(n) vence as regras de alinhamento por coluna da tabela do computador. */
+  .tabela tbody td:nth-child(n) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    border: 0;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .tabela td:first-child {
+    font-weight: 600;
+  }
+
+  .tabela td[data-rotulo]::before {
+    flex: none;
+    width: 112px;
+    color: var(--texto-suave);
+    content: attr(data-rotulo);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .tabela td[data-rotulo] select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tabela .tabela-acoes {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-top: 8px;
+    white-space: normal;
+  }
+}

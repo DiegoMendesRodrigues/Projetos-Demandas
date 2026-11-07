@@ -1,0 +1,56 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import icone_categoria %}
+{% block title %}Compartilhar {{ categoria.nome }} - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central usuarios">
+    <div class="usuarios-topo">
+      <h1 class="compartilhar-titulo">{{ icone_categoria(categoria.icone) }}<span>Compartilhar “{{ categoria.nome }}”</span></h1>
+    </div>
+    <p class="compartilhar-explicacao">Os membros dos grupos escolhidos passam a ver esta categoria, com os seus projetos e demandas. Com <strong>Visualizar</strong>, eles apenas veem; com <strong>Editar</strong>, também criam, alteram, movem, concluem e ocultam as demandas e as listas de tarefas, mas não as excluem. Os projetos e a categoria continuam sendo alterados só por você.</p>
+    {% if grupos_do_usuario %}
+      <form action="{{ url_for('principal.compartilhar_categoria', categoria_id=categoria.id) }}" method="post">
+        {{ form.hidden_tag() }}
+        <div class="tabela-rolagem">
+          <table class="tabela tabela-compartilhar">
+            <thead>
+              <tr><th scope="col">Grupo</th><th scope="col">Membros</th><th scope="col">Compartilhamento</th></tr>
+            </thead>
+            <tbody>
+              {% for grupo in grupos_do_usuario %}
+                <tr>
+                  <td><span class="grupo-nome" style="color: {{ grupo.cor }}">{{ icone_grupo(grupo.icone) }}<span class="grupo-nome-texto">{{ grupo.nome }}</span></span>
+                    {% if grupo.ingresso == "qualquer_usuario" %}
+                      <p class="compartilhar-alerta">Grupo aberto: qualquer pessoa com conta pode ingressar e passar a ver esta categoria.</p>
+                    {% elif grupo.ingresso == "qualquer_membro" %}
+                      <p class="compartilhar-alerta">Qualquer membro pode adicionar outras pessoas, que passam a ver esta categoria.</p>
+                    {% endif %}
+                  </td>
+                  <td data-rotulo="Membros">{{ grupo.membros|length }}</td>
+                  <td data-rotulo="Compartilhamento">
+                    <select name="grupo-{{ grupo.id }}" aria-label="Compartilhamento com {{ grupo.nome }}">
+                      <option value="">Não compartilhar</option>
+                      {% for valor, rotulo in permissoes %}
+                        <option value="{{ valor }}"{{ ' selected' if atuais.get(grupo.id) == valor }}>{{ rotulo }}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="formulario-acoes compartilhar-acoes">
+          <a class="botao" href="{{ url_for('principal.quadro', categoria=categoria.id) }}">Cancelar</a>
+          <button class="botao botao-primario" type="submit">Salvar</button>
+        </div>
+      </form>
+    {% else %}
+      <p>Você ainda não faz parte de nenhum grupo. <a href="{{ url_for('principal.grupos') }}">Crie um grupo ou ingresse em um</a> para compartilhar esta categoria.</p>
+      <div class="formulario-acoes compartilhar-acoes">
+        <a class="botao" href="{{ url_for('principal.quadro', categoria=categoria.id) }}">Voltar</a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

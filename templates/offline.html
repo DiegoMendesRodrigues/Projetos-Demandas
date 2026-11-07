@@ -1,0 +1,34 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Guardada pelo service worker (static/js/sw.js) e exibida quando não há conexão. Não estende o
+    base.html: é igual para todos e não pode ter dados do usuário nem o token CSRF. -#}
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="azul">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b3f91">
+  <title>Sem conexão - Projetos &amp; Demandas</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="48x48">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-32.png') }}" sizes="32x32">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="{{ url_for('principal.quadro') }}">
+      <img class="marca-logo" src="{{ url_for('static', filename='img/icone_cabecalho.png') }}" alt="" width="87" height="60">
+      <span class="marca-nome">Projetos <span class="marca-e">&amp;</span> Demandas</span>
+    </a>
+  </header>
+  <main>
+    <section class="vazio offline">
+      <svg class="offline-icone" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 8.8a15 15 0 0 1 4.2-2.6M9.5 5.2A15 15 0 0 1 22 8.8M5 12.5a10 10 0 0 1 3.4-2M13.6 10a10 10 0 0 1 5.4 2.5M8.5 16a5 5 0 0 1 7 0M12 20h.01M3 3l18 18"></path>
+      </svg>
+      <h1>Sem conexão</h1>
+      <p>Não foi possível falar com o Projetos &amp; Demandas. Confira a internet e tente de novo.</p>
+      <a class="botao botao-primario" href="{{ url_for('principal.quadro') }}">Tentar de novo</a>
+    </section>
+  </main>
+</body>
+</html>

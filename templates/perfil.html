@@ -1,0 +1,126 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+{% extends "base.html" %}
+{% from "_icones.html" import avatar %}
+{% block title %}Meu Perfil - Projetos &amp; Demandas{% endblock %}
+{% block main %}
+  <div class="cartao-central perfil perfil-largo">
+    <h1>Meu Perfil</h1>
+    <form action="{{ url_for('principal.perfil') }}" method="post">
+      {{ form.hidden_tag() }}
+      {# Duas colunas: o resumo, os dados da pessoa e a cor à esquerda; a foto, o ícone e a Automação à direita. -#}
+      <div class="perfil-colunas">
+        <div class="perfil-coluna">
+          <section class="resumo-semana" aria-labelledby="resumo-titulo">
+            <h2 id="resumo-titulo">Resumo da semana</h2>
+            <dl>
+              <div class="resumo-destaque">
+                <dt>Concluídas nesta semana</dt>
+                <dd>{{ resumo.concluidas }}</dd>
+              </div>
+              <div>
+                <dt>Na semana passada</dt>
+                <dd>{{ resumo.semana_passada }}</dd>
+              </div>
+              <div class="{{ 'resumo-alerta' if resumo.atrasadas }}">
+                <dt>Atrasadas</dt>
+                <dd>{{ resumo.atrasadas }}</dd>
+              </div>
+              <div>
+                <dt>Previstas para {{ dias }} dias</dt>
+                <dd>{{ resumo.proximas }}</dd>
+              </div>
+            </dl>
+            <p class="resumo-explicacao">Contam as demandas e listas de tarefas dos seus projetos e aquelas de que você é o responsável. A semana começa no domingo.</p>
+          </section>
+          <label for="nome">{{ form.nome.label.text }}</label>
+          {{ form.nome(required=True, maxlength=120, autocomplete='name') }}
+          {% for erro in form.nome.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+          <label for="email">E-mail</label>
+          <input id="email" type="email" value="{{ current_user.email }}" readonly>
+          <label for="telefone">{{ form.telefone.label.text }}</label>
+          {{ form.telefone(maxlength=15, placeholder='(00) 00000-0000', inputmode='tel', autocomplete='tel', **{'data-mascara-telefone': ''}) }}
+          {% for erro in form.telefone.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+          {# A cor é aplicada na tela ao ser escolhida (app.js) e gravada no Salvar. -#}
+          <fieldset class="cores-da-aplicacao">
+            <legend>{{ form.tema.label.text }}</legend>
+            <div class="cores-opcoes">
+              {% for opcao in form.tema %}
+                <label class="cor-opcao tema-opcao-{{ opcao.data }}">
+                  {{ opcao(**{'data-escolher-tema': ''}) }}
+                  <span>{{ opcao.label.text }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% for erro in form.tema.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+        </div>
+        <div class="perfil-coluna">
+          {# O título é um h2, como o de Automação; o fieldset continua nomeado por ele. -#}
+          <fieldset class="avatares" aria-labelledby="icone-titulo">
+            <h2 id="icone-titulo">{{ form.avatar.label.text }}</h2>
+            {# A imagem escolhida fica só no navegador até o Utilizar dessa forma da caixa de ajuste (app.js). -#}
+            <div class="perfil-foto">
+              <button class="botao" type="button" data-enviar-foto>Enviar minha foto</button>
+              <input type="file" accept="image/*" data-arquivo-da-foto hidden>
+            </div>
+            <div class="avatares-opcoes">
+              {% for opcao in form.avatar %}
+                {% if opcao.data == 'foto' %}
+                  <label class="avatar-opcao avatar-opcao-foto" title="{{ opcao.label.text }}" data-opcao-da-foto {{ 'hidden' if not current_user.foto }}>
+                    {{ opcao(**{'aria-label': opcao.label.text}) }}
+                    <img class="avatar avatar-foto" src="{{ url_for('principal.ver_foto', nome=current_user.foto) if current_user.foto }}" alt="">
+                  </label>
+                {% else %}
+                  <label class="avatar-opcao" title="{{ opcao.label.text }}">
+                    {{ opcao(**{'aria-label': opcao.label.text}) }}
+                    {{ avatar(opcao.data) }}
+                  </label>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% for erro in form.avatar.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+          <section class="automacao" aria-labelledby="automacao-titulo">
+            <h2 id="automacao-titulo">Automação</h2>
+            <label for="aviso_destinatarios">{{ form.aviso_destinatarios.label.text }}</label>
+            {{ form.aviso_destinatarios(required=True) }}
+            {% for erro in form.aviso_destinatarios.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+            <label for="aviso_antecedencia">{{ form.aviso_antecedencia.label.text }}</label>
+            {{ form.aviso_antecedencia(required=True) }}
+            {% for erro in form.aviso_antecedencia.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+            <p class="automacao-explicacao">Os avisos são enviados por e-mail quando o envio está configurado pelo administrador. O cartão atrasado também gera um aviso.</p>
+          </section>
+        </div>
+      </div>
+      <div class="perfil-acoes">
+        <a class="botao" href="{{ url_for('principal.quadro') }}">Cancelar</a>
+        <button class="botao botao-primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  {# A imagem cabe inteira na área de 400 x 400 px; o que fica dentro do círculo de 150 px de raio
+     vira a foto de 300 x 300 px. Fora do círculo, a imagem aparece desfocada. -#}
+  <dialog id="dialogo-foto" class="dialogo dialogo-foto" aria-labelledby="foto-titulo" data-url-foto="{{ url_for('principal.enviar_foto') }}">
+    <h2 id="foto-titulo">Ajustar minha imagem do perfil</h2>
+    <p class="foto-explicacao" id="foto-explicacao">Arraste a imagem para posicioná-la e use o Tamanho para aumentá-la ou diminuí-la. O que estiver dentro do círculo será a sua foto.</p>
+    <div class="foto-area" data-foto-area tabindex="0" aria-label="Posição da imagem. Use as setas para mover e as teclas + e - para mudar o tamanho." aria-describedby="foto-explicacao">
+      <img class="foto-imagem foto-desfocada" alt="" draggable="false" data-foto-imagem>
+      <div class="foto-recorte">
+        <img class="foto-imagem" alt="" draggable="false" data-foto-imagem>
+      </div>
+      <span class="foto-circulo" aria-hidden="true"></span>
+    </div>
+    <div class="foto-tamanho">
+      <button class="botao-icone" type="button" data-foto-zoom="-1" aria-label="Diminuir a imagem">−</button>
+      <label for="foto-zoom">Tamanho</label>
+      <input id="foto-zoom" type="range" min="0.5" max="4" step="0.01" value="1" data-foto-zoom-faixa>
+      <button class="botao-icone" type="button" data-foto-zoom="1" aria-label="Aumentar a imagem">+</button>
+    </div>
+    <div class="dialogo-acoes">
+      <button class="botao" type="button" data-foto-cancelar>Cancelar</button>
+      <button class="botao botao-primario" type="button" data-foto-utilizar>Utilizar dessa forma</button>
+    </div>
+  </dialog>
+{% endblock %}
