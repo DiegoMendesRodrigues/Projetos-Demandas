@@ -13,8 +13,10 @@
 - Criptografia da senha do SMTP gravada no banco, com uma chave derivada da SECRET_KEY.
 - Permissões dos arquivos do banco e das chaves.
 - Validação da força da senha com mensagens em português.
+- Envio das instruções do Esqueci minha senha em segundo plano, sem revelar se o e-mail tem conta.
 """
 import base64
+import logging
 import os
 import threading
 import time
@@ -25,11 +27,14 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from flask import current_app, flash, g, jsonify, redirect, render_template, request
-from flask_security import PasswordUtil, current_user, url_for_security
+from flask_mail import Message
+from flask_security import MailUtil, PasswordUtil, current_user, url_for_security
 from flask_security.utils import get_message
 
-from extensions import db
+from extensions import db, mail
 from models import agora_em_sao_paulo
+
+registro = logging.getLogger(__name__)
 
 # ---------- Cabeçalhos
 
@@ -135,6 +140,9 @@ LIMITES = {
 # CAPTCHA (a senha só é conferida com o código certo): sem resolvê-lo, ninguém bloqueia a conta
 # de outra pessoa. Acertar a senha zera a contagem.
 TENTATIVAS_POR_CONTA = (10, 15 * MINUTO)
+# E-mails do Esqueci minha senha por conta, pedidos de qualquer IP: ninguém enche a caixa de
+# entrada de outra pessoa. Acima disso, o pedido recebe a mesma mensagem, mas nada é enviado.
+EMAILS_DE_NOVA_SENHA_POR_CONTA = (3, HORA)
 MENSAGEM_DO_LIMITE = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente."
 
 
@@ -277,7 +285,7 @@ LIVRES_NA_TROCA_DE_SENHA = {
     "principal.offline",
     "principal.imagem_captcha",
 }
-MENSAGEM_DA_TROCA = "Antes de continuar, troque a senha padrão desta conta."
+MENSAGEM_DA_TROCA = "Antes de continuar, crie uma nova senha para esta conta."
 
 
 def exigir_troca_de_senha():
@@ -400,3 +408,45 @@ class SenhaUtil(PasswordUtil):
                          for mensagem in mensagens]
             mensagens = list(dict.fromkeys(mensagens))
         return mensagens, normalizada
+
+
+# ---------- E-mails do Flask-Security
+
+def em_segundo_plano(funcao):
+    threading.Thread(target=funcao, daemon=True).start()
+
+
+class EnvioDeEmails(MailUtil):
+    """Como o envio do Flask-Security, mas com as instruções do Esqueci minha senha em segundo plano.
+
+    A tela responde igual para qualquer e-mail (SECURITY_RETURN_GENERIC_RESPONSES). Se o envio
+    acontecesse durante a requisição, a demora do SMTP, ou um erro dele, mostraria que o e-mail
+    tem conta. Uma falha no envio só vai para o log.
+    """
+
+    def send_mail(self, template, subject, recipient, sender, body, html, **kwargs):
+        if template != current_app.config["SECURITY_EMAIL_TEMPLATE_PASSWORD_RESET"]:
+            return super().send_mail(template, subject, recipient, sender, body, html, **kwargs)
+        if current_app.config.get("LIMITES_ATIVOS", True):
+            permitido, _ = limitador.permitir("nova-senha:{}".format(str(recipient).lower()),
+                                              *EMAILS_DE_NOVA_SENHA_POR_CONTA)
+            if not permitido:
+                registro.warning("Esqueci minha senha: limite de e-mails da conta atingido; nada foi enviado.")
+                return None
+        if isinstance(sender, tuple) and len(sender) == 2:
+            sender = (str(sender[0]), str(sender[1]))
+        mensagem = Message(str(subject), sender=sender, recipients=[recipient], body=body, html=html)
+        app = current_app._get_current_object()
+
+        def enviar():
+            with app.app_context():
+                if not app.config.get("MAIL_SERVER"):
+                    registro.warning("Esqueci minha senha sem o envio de e-mails configurado: nada foi enviado.")
+                    return
+                try:
+                    mail.send(mensagem)
+                except Exception:  # noqa: BLE001 - quem pediu já recebeu a resposta; fica o registro.
+                    registro.exception("Falha ao enviar as instruções para criar uma nova senha")
+
+        em_segundo_plano(enviar)
+        return None

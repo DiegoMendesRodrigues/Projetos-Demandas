@@ -86,7 +86,7 @@
   <dialog id="notificacao" class="dialogo notificacao" aria-labelledby="notificacao-titulo">
     <h2 id="notificacao-titulo">Notificação</h2>
     <div data-notificacao-texto>
-      {% for categoria, mensagem in get_flashed_messages(with_categories=True) if categoria != 'silenciosa' %}
+      {% for categoria, mensagem in get_flashed_messages(with_categories=True) if categoria not in ('silenciosa', 'recuperacao') %}
         <p>{{ mensagem }}</p>
       {% endfor %}
     </div>

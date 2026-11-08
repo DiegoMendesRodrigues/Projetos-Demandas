@@ -45,6 +45,7 @@ def em_portugues(mensagem):
 @pytest.fixture
 def envio_de_emails(app):
     app.config.update(
+        MAIL_SERVER="smtp.exemplo.com",
         SECURITY_SEND_REGISTER_EMAIL=True,
         SECURITY_SEND_PASSWORD_CHANGE_EMAIL=True,
         SECURITY_EMAIL_SENDER=("Projetos & Demandas", "atividades@exemplo.com"),

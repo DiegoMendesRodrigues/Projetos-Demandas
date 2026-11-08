@@ -8,7 +8,7 @@
     {% if security.registerable and request.endpoint != 'security.register' %}
       <a href="{{ url_for_security('register') }}{%- if 'next' in request.args -%}?next={{ request.args.next|urlencode }}{%- endif -%}">Criar conta</a>
     {% endif %}
-    {% if security.recoverable %}
+    {% if security.recoverable and request.endpoint != 'security.forgot_password' %}
       <a href="{{ url_for_security('forgot_password') }}">Esqueci minha senha</a>
     {% endif %}
   </nav>

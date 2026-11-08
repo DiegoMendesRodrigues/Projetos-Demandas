@@ -52,6 +52,7 @@ from routes import (
     tarefas_atrasadas,
 )
 from seguranca import (
+    EnvioDeEmails,
     SenhaUtil,
     acesso_no_login,
     aplicar_cabecalhos,
@@ -481,6 +482,7 @@ def create_app(config=Config):
     security.confirmable = app.config["SECURITY_CONFIRMABLE"]
     # O init_app só aceita formulários e opções: a classe da validação da senha vai direto no objeto.
     security._password_util_cls = SenhaUtil
+    security._mail_util_cls = EnvioDeEmails
     security.init_app(
         app,
         SQLAlchemyUserDatastore(db, Usuario, Papel),

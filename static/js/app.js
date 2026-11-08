@@ -1053,6 +1053,11 @@
       // O arquivo excluído de dentro do cartão aberto não tira o usuário do cartão.
       formularioDaConfirmacao.dataset.excluirAnexo = botao.closest("#dialogo-tarefa") ? "1" : "";
       confirmacao.showModal();
+    } else if ((botao = alvo.closest("[data-redefinir-senha]"))) {
+      // Usuários: a confirmação envia o POST que gera a nova senha e a manda por e-mail.
+      const confirmacao = document.getElementById("confirmacao-senha");
+      confirmacao.querySelector("form").action = botao.dataset.url;
+      confirmacao.showModal();
     } else if ((botao = alvo.closest("[data-escolher-responsavel]"))) {
       abrirResponsavel(botao);
     } else if (alvo.closest(".tarefa") && !alvo.closest(".tarefa-alca, .tarefa-acoes, .tarefa-anexos, .tarefa-descricao a, .tarefa-itens, .tarefa-pessoas")) {

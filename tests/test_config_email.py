@@ -45,10 +45,11 @@ def test_configuracao_nao_vem_de_arquivo_nem_do_ambiente():
 
 
 def test_sem_configuracao_salva_o_envio_fica_desligado(app):
-    assert app.config["SECURITY_RECOVERABLE"] is False
     assert app.config["SECURITY_SEND_REGISTER_EMAIL"] is False
-    assert app.extensions["security"].recoverable is False
-    assert "Esqueci minha senha" not in app.test_client().get("/login").get_data(as_text=True)
+    assert app.config["SECURITY_CONFIRMABLE"] is False
+    # O Esqueci minha senha existe mesmo assim: o pedido recebe a resposta de sempre, sem envio.
+    assert app.extensions["security"].recoverable is True
+    assert "Esqueci minha senha" in app.test_client().get("/login").get_data(as_text=True)
 
 
 def test_configuracao_salva_liga_o_envio_ao_iniciar(app, monkeypatch):

@@ -1,7 +1,7 @@
 {# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
 {# Desenvolvido por Diego Mendes Rodrigues -#}
 {% extends "base.html" %}
-{% from "_icones.html" import caneta, lixeira, mais %}
+{% from "_icones.html" import caneta, chave, lixeira, mais %}
 {% block title %}Usuários - Projetos &amp; Demandas{% endblock %}
 {% macro cabecalho_ordenavel(chave, rotulo) -%}
   {% set ativo = ordem == chave %}
@@ -35,6 +35,12 @@
               <td data-rotulo="Administrador">{{ 'Sim' if usuario.administrador else 'Não' }}</td>
               <td data-rotulo="Plano">{{ usuario.plano_rotulo }}</td>
               <td class="tabela-acoes">
+                <button class="botao-icone" type="button"
+                        data-redefinir-senha
+                        data-url="{{ url_for('principal.redefinir_senha', usuario_id=usuario.id) }}"
+                        aria-label="Redefinir a senha de {{ usuario.nome or usuario.email }}"
+                        data-dica="{{ 'Para trocar a sua senha, use Alterar a Senha' if usuario.id == current_user.id else 'Redefinir a senha' }}"
+                        {{ 'disabled' if usuario.id == current_user.id }}>{{ chave() }}</button>
                 <a class="botao-icone" href="{{ url_for('principal.editar_usuario', usuario_id=usuario.id) }}"
                    aria-label="Editar usuário {{ usuario.nome or usuario.email }}" data-dica="Editar usuário">{{ caneta() }}</a>
                 <button class="botao-icone botao-excluir" type="button"
@@ -56,6 +62,18 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <h2 id="confirmacao-titulo">Confirmação</h2>
       <p>Confirma a exclusão do usuário, com todos os seus projetos, demandas e arquivos?</p>
+      <div class="confirmacao-acoes">
+        <button class="botao botao-primario" type="submit">Sim</button>
+        <button class="botao" type="button" data-fechar autofocus>Não</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmacao-senha" class="dialogo notificacao" aria-labelledby="confirmacao-senha-titulo">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2 id="confirmacao-senha-titulo">Confirmação</h2>
+      <p>Confirma o redefinir a senha desse usuário?</p>
       <div class="confirmacao-acoes">
         <button class="botao botao-primario" type="submit">Sim</button>
         <button class="botao" type="button" data-fechar autofocus>Não</button>

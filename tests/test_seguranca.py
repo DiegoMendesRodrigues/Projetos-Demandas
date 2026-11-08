@@ -107,7 +107,7 @@ def test_sem_trocar_a_senha_as_paginas_levam_a_alterar_a_senha(conta_inicial, en
     assert resposta.status_code == 302
     assert resposta.headers["Location"].endswith("/change")
     pagina = cliente.get("/change").get_data(as_text=True)
-    assert "Antes de continuar, troque a senha padrão desta conta." in pagina
+    assert "Antes de continuar, crie uma nova senha para esta conta." in pagina
 
 
 def test_sem_trocar_a_senha_a_api_responde_403_em_json(conta_inicial):
@@ -116,7 +116,7 @@ def test_sem_trocar_a_senha_a_api_responde_403_em_json(conta_inicial):
     resposta = cliente.post("/api/projetos/ordem", json={"ordem": []})
 
     assert resposta.status_code == 403
-    assert resposta.get_json()["erro"] == "Antes de continuar, troque a senha padrão desta conta."
+    assert resposta.get_json()["erro"] == "Antes de continuar, crie uma nova senha para esta conta."
 
 
 def test_trocar_a_senha_libera_o_sistema(conta_inicial):
@@ -462,8 +462,8 @@ def test_api_tem_limite_por_usuario_em_json(com_limites, cliente, outro_cliente)
 
 def test_rotas_com_limite_existem(app):
     endpoints = set(app.view_functions)
-    # send_confirmation e reset_password só existem com o envio de e-mails ligado.
-    opcionais = {"security.send_confirmation", "security.reset_password", "security.forgot_password"}
+    # send_confirmation só existe com o envio de e-mails ligado.
+    opcionais = {"security.send_confirmation"}
 
     assert set(LIMITES) - opcionais <= endpoints
 

@@ -1,0 +1,11 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+<p>Olá, {{ pessoa.nome or pessoa.email }}!</p>
+<p>O administrador do Projetos &amp; Demandas redefiniu a sua senha. Você possui uma nova senha no sistema.</p>
+<p>
+  Endereço de acesso: <a href="{{ endereco }}">{{ endereco }}</a><br>
+  Usuário: <strong>{{ pessoa.email }}</strong><br>
+  Nova senha: <strong><code>{{ senha }}</code></strong>
+</p>
+<p>No primeiro acesso, o sistema pedirá que você crie uma senha só sua.</p>
+<p>Se você não pediu a redefinição da senha, fale com o administrador do sistema.</p>

@@ -3100,6 +3100,27 @@ kbd {
   padding-left: 18px;
 }
 
+.dica-da-conta {
+  margin: 0 0 16px;
+  color: var(--texto-suave);
+  font-size: 0.92rem;
+}
+
+/* A resposta do Esqueci minha senha fica na tela, e não na notificação que fecha sozinha. */
+.aviso-da-conta {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--acento);
+  border-radius: 8px;
+  background: var(--fundo);
+  line-height: 1.5;
+}
+
+.formulario-conta .botao-largo {
+  width: 100%;
+}
+
 .menu-conta {
   display: flex;
   flex-wrap: wrap;
@@ -3511,9 +3532,12 @@ kbd {
   margin-top: 12px;
 }
 
+/* A imagem ocupa a linha toda, menos o botão: ele fica alinhado à direita dos campos. */
 .captcha-imagem {
   display: block;
-  max-width: calc(100% - 48px);
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
   height: auto;
   border: 1px solid var(--borda);
   border-radius: 8px;

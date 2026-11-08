@@ -133,10 +133,7 @@ def test_primeiro_salvamento_avisa_que_e_preciso_reiniciar(administrador):
         "/administracao/configuracoes", data=DADOS, follow_redirects=True
     )
 
-    assert (
-        "Reinicie a aplicação para ativar a recuperação de senha e a confirmação do e-mail."
-        in resposta.get_data(as_text=True)
-    )
+    assert "Reinicie a aplicação para ativar a confirmação do e-mail." in resposta.get_data(as_text=True)
 
 
 def test_senha_e_obrigatoria_quando_nao_ha_nenhuma(administrador):

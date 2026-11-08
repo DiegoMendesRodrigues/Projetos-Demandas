@@ -120,9 +120,11 @@ class Config:
     SECURITY_CONFIRMABLE = False
     # Lido também pelo e-mail de confirmação, que escreve o prazo em português.
     SECURITY_CONFIRM_EMAIL_WITHIN = timedelta(days=2)
+    # O Esqueci minha senha existe sempre, com o link na tela de login. Sem o envio de e-mails
+    # configurado, o pedido recebe a mesma mensagem e nada é enviado (seguranca.EnvioDeEmails).
+    SECURITY_RECOVERABLE = True
     # Sem a tela de Configurações salva, os recursos que dependem de envio ficam desligados.
     # aplicar_configuracao_de_email, em routes.py, os liga.
-    SECURITY_RECOVERABLE = False
     SECURITY_SEND_REGISTER_EMAIL = False
     SECURITY_SEND_PASSWORD_CHANGE_EMAIL = False
     SECURITY_SEND_PASSWORD_RESET_NOTICE_EMAIL = False
@@ -172,6 +174,14 @@ class Config:
     SECURITY_MSG_PASSWORD_INVALID_LENGTH = (
         "A senha deve ter pelo menos %(length)s caracteres.",
         "error",
+    )
+    # A mesma resposta para qualquer e-mail, cadastrado ou não. A categoria "recuperacao" não abre a
+    # caixa de notificação (que fecha sozinha): o texto fica na própria tela do Esqueci minha senha.
+    SECURITY_MSG_PASSWORD_RESET_REQUEST = (
+        "Recebemos seu e-mail para recuperar a senha. Caso ele esteja cadastrado, você receberá as "
+        "informações para acessar o Projetos & Demandas novamente nos próximos minutos. Verifique "
+        "sua pasta de Spam na sua caixa de e-mail.",
+        "recuperacao",
     )
     SECURITY_MSG_PASSWORD_RESET_EXPIRED = (
         "O prazo para redefinir sua senha expirou.",

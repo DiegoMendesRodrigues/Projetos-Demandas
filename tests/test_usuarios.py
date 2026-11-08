@@ -87,7 +87,8 @@ def test_lista_nao_permite_excluir_a_propria_conta(administrador, outro_cliente)
     html = administrador.get("/administracao/usuarios").get_data(as_text=True)
 
     assert 'data-dica="Você não pode excluir a sua conta"' in html
-    assert html.count(" disabled>") == 1
+    # Na própria conta, ficam desligados o Excluir e o Redefinir a senha.
+    assert html.count(" disabled>") == 2
 
 
 def test_criar_usuario(administrador):

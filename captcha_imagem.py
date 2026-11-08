@@ -21,7 +21,8 @@ from models import DesafioCaptcha
 ALFABETO = "ABCDEFGHJKLMNPRSTUVWXYZ23456789"
 TAMANHO_DO_CODIGO = 5
 VALIDADE = timedelta(minutes=10)
-LARGURA, ALTURA = 200, 70
+# A largura alinha o botão Gerar outra imagem com os campos da tela de login (style.css, .captcha).
+LARGURA, ALTURA = 332, 70
 CHAVE_DA_SESSAO = "captcha"
 
 

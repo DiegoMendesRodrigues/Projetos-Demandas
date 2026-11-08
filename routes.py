@@ -3,8 +3,10 @@
 import hashlib
 import html
 import json
+import logging
 import os
 import re
+import secrets
 import unicodedata
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -22,10 +24,12 @@ from flask import (
     send_from_directory,
     url_for,
 )
+from flask_mail import Message
 from flask_security import auth_required, current_user, hash_password, url_for_security
 from flask_wtf import FlaskForm
 from sqlalchemy import and_, false, func, or_, select, true
 
+from avisos import email_configurado
 from banco import TIPOS_DE_BANCO, tipo_da_url
 from captcha_imagem import novo_desafio
 from foto_do_perfil import FotoInvalida, preparar_foto
@@ -211,7 +215,6 @@ def aplicar_configuracao_de_email(app, configuracao):
     remetente = (configuracao.nome_envio, configuracao.email_envio)
     # Com o servidor configurado, os e-mails automáticos passam a ser enviados.
     app.config.update(
-        SECURITY_RECOVERABLE=True,
         # Quem se cadastra confirma o e-mail antes de entrar.
         SECURITY_CONFIRMABLE=True,
         SECURITY_SEND_REGISTER_EMAIL=True,
@@ -1637,12 +1640,9 @@ def configuracoes():
             db.session.add(salva)
             db.session.commit()
             aplicar_configuracao_de_email(current_app, salva)
-            if "security.forgot_password" not in current_app.view_functions:
-                # As rotas de recuperação de senha e de confirmação são criadas ao iniciar a aplicação.
-                flash(
-                    "Reinicie a aplicação para ativar a recuperação de senha e a confirmação do e-mail.",
-                    "aviso",
-                )
+            if "security.send_confirmation" not in current_app.view_functions:
+                # A rota de confirmação do e-mail é criada ao iniciar a aplicação.
+                flash("Reinicie a aplicação para ativar a confirmação do e-mail.", "aviso")
             return redirect(url_for("principal.quadro"))
     return pagina_de_configuracoes(form, ChaveDoYoutubeForm(), tem_senha=bool(senha_atual))
 
@@ -1853,6 +1853,55 @@ def excluir_usuario(usuario_id):
 
     apagar_conta(usuario)
     flash("Usuário excluído.", "sucesso")
+    return redirect(url_for("principal.usuarios"))
+
+
+# Sem letras e números que se confundem (0/O, 1/l/I), para a pessoa digitar a senha do e-mail.
+ALFABETO_DA_SENHA = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+ASSUNTO_DA_NOVA_SENHA = "Sua nova senha - Projetos & Demandas"
+registro = logging.getLogger(__name__)
+
+
+def gerar_senha():
+    """Quatro grupos de 4 caracteres (cerca de 92 bits), como "hT7k-Pq3m-Zx9a-Wd4r"."""
+    return "-".join("".join(secrets.choice(ALFABETO_DA_SENHA) for _ in range(4)) for _ in range(4))
+
+
+@principal.route("/administracao/usuarios/<int:usuario_id>/redefinir-senha", methods=["POST"])
+@auth_required()
+def redefinir_senha(usuario_id):
+    """Gera uma nova senha e a envia por e-mail. A senha só muda se o e-mail sair."""
+    exigir_administrador()
+    usuario = db.get_or_404(Usuario, usuario_id)
+    if usuario.id == current_user.id:
+        flash("Para trocar a sua senha, use Alterar a Senha.", "erro")
+        return redirect(url_for("principal.usuarios"))
+    if not email_configurado():
+        flash("Configure o envio de e-mails em Configurações para redefinir a senha.", "erro")
+        return redirect(url_for("principal.usuarios"))
+
+    senha = gerar_senha()
+    dados = {"pessoa": usuario, "senha": senha, "endereco": url_for_security("login", _external=True)}
+    mensagem = Message(
+        subject=ASSUNTO_DA_NOVA_SENHA,
+        recipients=[usuario.email],
+        body=render_template("avisos/nova_senha.txt", **dados),
+        html=render_template("avisos/nova_senha.html", **dados),
+    )
+    try:
+        mail.send(mensagem)
+    except Exception:  # noqa: BLE001 - sem o e-mail, a pessoa ficaria sem saber a senha.
+        registro.exception("Falha ao enviar a nova senha da conta %s", usuario.id)
+        flash("Não foi possível enviar o e-mail. A senha não foi alterada.", "erro")
+        return redirect(url_for("principal.usuarios"))
+
+    usuario.password = hash_password(senha)
+    # As sessões abertas e o Lembrar de mim da conta deixam de valer.
+    usuario.fs_uniquifier = uuid4().hex
+    # A senha passou pelo e-mail: no primeiro acesso, a pessoa cria uma só dela.
+    usuario.trocar_senha = True
+    db.session.commit()
+    flash("Senha redefinida. A nova senha foi enviada para {}.".format(usuario.email), "sucesso")
     return redirect(url_for("principal.usuarios"))
 
 

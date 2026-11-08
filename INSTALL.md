@@ -68,7 +68,7 @@ O envio de e-mails é configurado só pela aplicação. Entre como administrador
 
 Na porta 465, a conexão é cifrada desde o início; nas portas 25, 587 e 2525, a opção Utilizar TLS ativa o STARTTLS.
 
-Enquanto a tela não for salva, a recuperação de senha e os e-mails automáticos ficam desligados. Depois do primeiro salvamento, reinicie a aplicação para ativar a recuperação de senha; as alterações seguintes valem sem reiniciar.
+Enquanto a tela não for salva, nenhum e-mail é enviado: o Esqueci minha senha continua na tela de login e responde com a mesma mensagem, mas as instruções não saem, e o administrador não consegue usar o Redefinir a senha de Administração > Usuários. Depois do primeiro salvamento, reinicie a aplicação para ativar a confirmação do e-mail de quem se cadastra; as alterações seguintes valem sem reiniciar.
 
 Com o envio configurado, a própria aplicação manda os avisos de vencimento da área Automação do Meu Perfil: a primeira verificação acontece um minuto depois de iniciar, e as seguintes, a cada 10 minutos. Sem a configuração, nenhum aviso é enviado.
 
@@ -141,7 +141,7 @@ Guarde esse arquivo em local seguro e não altere as chaves depois de criar as c
 
 `PROXY_CONFIAVEL=1` faz o sistema ler o IP do visitante e o HTTPS dos cabeçalhos enviados pelo Nginx. Sem ele, o limite de tentativas contaria todos os visitantes como um só, com o IP do próprio Nginx. Use-o só com o Gunicorn atendendo em `127.0.0.1`, como no serviço abaixo: acessado diretamente, qualquer pessoa poderia falsificar esses cabeçalhos.
 
-Os e-mails não são configurados neste arquivo: depois de instalar, use a tela Administração > Configurações, descrita no ambiente de desenvolvimento, e reinicie o serviço depois do primeiro salvamento.
+Os e-mails não são configurados neste arquivo: depois de instalar, use a tela Administração > Configurações, descrita no ambiente de desenvolvimento, e reinicie o serviço depois do primeiro salvamento, para ativar a confirmação do e-mail.
 
 ### 6. Criar o serviço do systemd
 
@@ -372,6 +372,8 @@ sudo journalctl -u projetos-demandas -f
 - **Avisos por e-mail:** os avisos de vencimento saem de uma tarefa que roda dentro da própria aplicação, por isso o Gunicorn continua com um único processo. Para desligá-los, altere `AVISOS_ATIVOS` para `False` em `config.py` e reinicie o serviço.
 - **CAPTCHA:** o login, o cadastro e o Esqueci minha senha pedem o código de uma imagem gerada no próprio servidor, sem serviço externo. Para desligá-lo, altere `CAPTCHA_ATIVO` para `False` em `config.py` e reinicie o serviço.
 - **Confirmação do e-mail:** com o envio de e-mails configurado em Administração > Configurações (e o serviço reiniciado depois do primeiro salvamento), quem se cadastra recebe um link e só entra depois de confirmar o e-mail. As contas criadas pelo administrador e as que já existiam contam como confirmadas.
+- **Esqueci minha senha:** o link fica na tela de login, à direita do Criar conta, e pede só o e-mail e o código da imagem. A resposta é sempre a mesma, com ou sem conta para o e-mail, e as instruções saem em segundo plano, para a demora ou um erro do servidor SMTP não revelarem quem tem conta. Cada conta recebe até 3 e-mails de nova senha por hora. Sem o envio de e-mails configurado, nada é enviado, e o aviso fica nos registros do serviço (`sudo journalctl -u projetos-demandas | grep "Esqueci minha senha"`).
+- **Redefinir a senha:** em Administração > Usuários, o ícone da chave, à esquerda do Editar, gera uma nova senha e a envia por e-mail à pessoa, com o endereço de acesso e o usuário. Exige o envio de e-mails configurado; se o envio falhar, a senha antiga continua valendo. A redefinição encerra as sessões abertas da pessoa, que cria uma senha própria no primeiro acesso.
 - **Senhas:** as senhas novas têm pelo menos 10 caracteres e não podem ser fáceis de adivinhar. As senhas já cadastradas continuam valendo até serem trocadas.
 - **Limite de tentativas:** o login, o cadastro, a recuperação de senha, a imagem do CAPTCHA, a busca de vídeos e o envio de arquivos têm um limite de requisições por IP ou por usuário (`LIMITES` em `seguranca.py`). Os contadores ficam na memória do processo e recomeçam quando o serviço é reiniciado. Para desligá-lo, altere `LIMITES_ATIVOS` para `False` em `config.py` e reinicie o serviço.
 - **Aplicativo instalável:** no celular e no computador, o sistema pode ser instalado como aplicativo (menu do usuário > Instalar o aplicativo, no Chrome e no Edge, ou Compartilhar > Adicionar à Tela de Início, no iPhone). Isso exige HTTPS com um certificado válido: com o certificado autoassinado do servidor acessado pelo IP, o navegador não instala o aplicativo nem guarda os arquivos para abrir mais rápido, e o restante do sistema continua funcionando.

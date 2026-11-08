@@ -12,6 +12,7 @@ from banco import tipo_da_url
 from config import Config
 from extensions import db, security
 from models import Categoria, Projeto, Tarefa
+import seguranca
 import youtube
 
 SENHA = "senha-de-teste-123"
@@ -52,6 +53,12 @@ def oembed_do_youtube_sem_internet(monkeypatch):
 
     monkeypatch.setattr(youtube, "baixar_oembed", recusar)
     monkeypatch.setattr(youtube, "baixar_da_api", sem_api)
+
+
+@pytest.fixture(autouse=True)
+def envio_sem_thread(monkeypatch):
+    """O e-mail do Esqueci minha senha sai numa thread: nos testes, sai na hora."""
+    monkeypatch.setattr(seguranca, "em_segundo_plano", lambda funcao: funcao())
 
 
 @pytest.fixture
