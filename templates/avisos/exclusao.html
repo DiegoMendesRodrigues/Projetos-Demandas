@@ -1,0 +1,6 @@
+{# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
+{# Desenvolvido por Diego Mendes Rodrigues -#}
+<p>Olá, {{ pessoa.nome or pessoa.email }}!</p>
+<p>A sua conta no Projetos &amp; Demandas está sem uso há algum tempo. No plano {{ pessoa.plano.nome }}, a conta que fica mais de {{ dias }} dias sem acesso é excluída.</p>
+<p>Se você não entrar no sistema até <strong>{{ exclusao.strftime('%d/%m/%Y às %H:%M') }}</strong>, a conta será excluída com todas as categorias, projetos, cartões, arquivos e imagens. Essa exclusão não pode ser desfeita.</p>
+<p>Para manter a conta, basta entrar no Projetos &amp; Demandas com o seu e-mail ({{ pessoa.email }}) antes dessa data.</p>

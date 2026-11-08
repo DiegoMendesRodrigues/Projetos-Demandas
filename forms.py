@@ -29,6 +29,7 @@ from wtforms.validators import (
     Length,
     NumberRange,
     Optional,
+    StopValidation,
     ValidationError,
 )
 
@@ -46,6 +47,8 @@ from models import (
     LIMITE_NOME_GRUPO,
     LIMITE_NOME_PLANO,
     LIMITES_DO_PLANO,
+    DIAS_DE_INATIVIDADE,
+    DIAS_DE_INATIVIDADE_PADRAO,
     COR_PADRAO,
     CORES_PROJETO,
     FUNDO_PADRAO,
@@ -282,6 +285,16 @@ def campo_de_texto(rotulo, mensagem, *validadores):
     )
 
 
+def escolha_obrigatoria(mensagem):
+    """A lista precisa vir no envio. Ilimitado é o texto vazio, que o InputRequired recusaria."""
+
+    def conferir(_form, campo):
+        if not campo.raw_data:
+            raise StopValidation(mensagem)
+
+    return conferir
+
+
 def campo_de_limite(chave):
     rotulo, opcoes = LIMITES_DO_PLANO[chave]
     return SelectField(
@@ -336,6 +349,21 @@ class PlanoForm(FlaskForm):
     atividades = campo_de_limite("atividades")
     listas_de_tarefas = campo_de_limite("listas_de_tarefas")
     videos = campo_de_limite("videos")
+    dias_de_inatividade = SelectField(
+        "Dias de Inatividade para a Exclusão da Conta",
+        choices=DIAS_DE_INATIVIDADE,
+        default=str(DIAS_DE_INATIVIDADE_PADRAO),
+        # Ilimitado vem como texto vazio e é gravado como None.
+        coerce=lambda valor: int(valor) if valor not in (None, "", "None") else None,
+        validate_choice=False,
+        validators=[
+            escolha_obrigatoria("Escolha os dias de inatividade para a exclusão da conta."),
+            AnyOf(
+                [int(valor) if valor else None for valor, _ in DIAS_DE_INATIVIDADE],
+                message="Escolha um dos prazos da lista.",
+            ),
+        ],
+    )
     padrao = BooleanField("Plano padrão para novas contas")
 
 

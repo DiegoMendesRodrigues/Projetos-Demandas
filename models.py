@@ -1,11 +1,19 @@
 # Projetos & Demandas | Solução on-line para a gestão de projetos e demandas
 # Desenvolvido por Diego Mendes Rodrigues
+from datetime import datetime
+
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import event, select, true
 
 import videos
+from config import FUSO_HORARIO
 from extensions import db
 from tipos_do_banco import DataHora, TextoLongoVazio, TextoVazio
+
+def agora_em_sao_paulo():
+    """O horário de São Paulo, sem fuso, como as demais datas do banco (routes.agora)."""
+    return datetime.now(FUSO_HORARIO).replace(tzinfo=None)
+
 
 TEMAS = [
     ("azul", "Azul"),
@@ -214,6 +222,11 @@ class Usuario(db.Model, UserMixin):
     trocar_senha = db.Column(db.Boolean, nullable=False, default=False)
     # Preenchido pelo Flask-Security quando a pessoa confirma o e-mail (SECURITY_CONFIRMABLE).
     confirmed_at = db.Column(DataHora)
+    # O último login ou uso do sistema (registrar_acesso, em seguranca.py). Conta o prazo de
+    # inatividade do plano (inatividade.py); a conta nova começa a contar ao ser criada.
+    ultimo_acesso = db.Column(DataHora, default=lambda: agora_em_sao_paulo())
+    # Quando saiu o e-mail avisando da exclusão por inatividade; volta a vazio no próximo acesso.
+    aviso_de_exclusao_em = db.Column(DataHora)
 
     roles = db.relationship("Papel", secondary=usuarios_papeis, backref="usuarios")
     categorias = db.relationship(
@@ -616,6 +629,9 @@ LIMITES_DO_PLANO = {
     "videos": ("Quantidade de Vídeos", opcoes_de_quantidade(50, 500, 50, primeira=25)),
 }
 LIMITE_NOME_PLANO = 100
+# Dias sem login ou uso até a conta ser excluída (inatividade.py). Ilimitado é gravado como vazio.
+DIAS_DE_INATIVIDADE = [(str(dias), str(dias)) for dias in (15, 30, 60, 90, 120, 180)] + [("", "Ilimitado")]
+DIAS_DE_INATIVIDADE_PADRAO = 15
 LIMITE_ARMAZENAMENTO_MB = 1024 * 1024
 
 
@@ -632,6 +648,9 @@ class PlanoDeUsuario(db.Model):
     atividades = db.Column(db.Integer)
     listas_de_tarefas = db.Column(db.Integer)
     videos = db.Column(db.Integer)
+    # Dias de Inatividade para a Exclusão da Conta; vazio é Ilimitado (nenhuma conta é excluída).
+    # Vazio é Ilimitado: os planos criados pelo sistema nascem assim; o formulário sugere 15.
+    dias_de_inatividade = db.Column(db.Integer)
     # As contas novas recebem este plano. Há sempre um, e só um, marcado.
     padrao = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -639,9 +658,15 @@ class PlanoDeUsuario(db.Model):
 
     @property
     def capacidades(self):
-        """MB / categorias / projetos / demandas / listas de tarefas / vídeos; * é Ilimitadas."""
+        """MB / categorias / projetos / demandas / listas de tarefas / vídeos / dias de inatividade;
+        * é Ilimitadas."""
         limites = ["*" if getattr(self, chave) is None else str(getattr(self, chave)) for chave in LIMITES_DO_PLANO]
-        return " / ".join(["{} MB".format(self.armazenamento_mb)] + limites)
+        inatividade = "*" if self.dias_de_inatividade is None else "{} dias".format(self.dias_de_inatividade)
+        return " / ".join(["{} MB".format(self.armazenamento_mb)] + limites + [inatividade])
+
+    @property
+    def rotulo_da_inatividade(self):
+        return "Ilimitado" if self.dias_de_inatividade is None else "{} dias".format(self.dias_de_inatividade)
 
 
 @event.listens_for(Usuario, "before_insert")

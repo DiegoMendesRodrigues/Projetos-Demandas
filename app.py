@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import Flask, current_app, render_template, request
 from flask_security import SQLAlchemyUserDatastore, current_user, hash_password, verify_password
-from flask_security.signals import password_changed, password_reset, user_registered
+from flask_security.signals import password_changed, password_reset, user_authenticated, user_registered
 from markupsafe import escape
 from sqlalchemy import bindparam, inspect, text
 from werkzeug.exceptions import HTTPException
@@ -39,6 +39,7 @@ from models import (
     rotulo_em_megabytes,
 )
 from avisos import iniciar_avisos
+from inatividade import cuidar_das_contas_inativas
 from paginas_publicas import publico
 from banco import preparar_motor
 from comandos_do_banco import banco, concluir_banco_antigo, preparar_banco
@@ -52,6 +53,7 @@ from routes import (
 )
 from seguranca import (
     SenhaUtil,
+    acesso_no_login,
     aplicar_cabecalhos,
     arquivos_do_banco,
     cifrar,
@@ -61,6 +63,7 @@ from seguranca import (
     esta_cifrada,
     exigir_troca_de_senha,
     proteger_arquivos,
+    registrar_acesso,
 )
 
 # Cada cor pastel anterior e a cor vibrante que a substituiu.
@@ -286,6 +289,7 @@ def garantir_plano_padrao():
         padrao = (
             plano_pelo_nome(nome)
             or PlanoDeUsuario.query.order_by(PlanoDeUsuario.nome).first()
+            # Criado pelo sistema, como os planos de antes do prazo: Ilimitado até o administrador escolher.
             or PlanoDeUsuario(nome=nome, armazenamento_mb=megabytes)
         )
         padrao.padrao = True
@@ -382,6 +386,12 @@ def criar_conta_inicial(app):
     db.session.commit()
 
 
+def tarefas_de_limpeza(momento):
+    """Rodam na tarefa periódica dos avisos: as imagens da descrição sem uso e as contas inativas."""
+    apagar_imagens_pendentes(momento)
+    cuidar_das_contas_inativas(momento)
+
+
 def senha_trocada(_app, user, **_dados):
     # O Flask-Security grava o usuário ao fim da requisição, junto com a senha nova.
     user.trocar_senha = False
@@ -425,6 +435,8 @@ def registrar_protecoes(app):
     # O endereço vem primeiro: um Host desconhecido não chega às páginas que enviam e-mails.
     app.before_request(conferir_host)
     app.before_request(pagina_de_manutencao)
+    # O uso do sistema conta como acesso (exclusão por inatividade, inatividade.py).
+    app.before_request(registrar_acesso)
     # A troca da senha vem antes do limite: a página de troca continua acessível.
     app.before_request(exigir_troca_de_senha)
     app.before_request(conferir_limite)
@@ -433,6 +445,7 @@ def registrar_protecoes(app):
     password_changed.connect(senha_trocada)
     password_reset.connect(senha_trocada)
     user_registered.connect(conta_criada)
+    user_authenticated.connect(acesso_no_login)
 
 
 def create_app(config=Config):
@@ -513,7 +526,7 @@ def create_app(config=Config):
 
     # Os e-mails da Automação saem de uma tarefa periódica dentro do próprio app (avisos.py).
     if app.config["AVISOS_ATIVOS"] and app.config["BANCO_PRONTO"] and not app.testing and not executando_comando_do_banco():
-        iniciar_avisos(app, agora, apagar_imagens_pendentes)
+        iniciar_avisos(app, agora, tarefas_de_limpeza)
 
     return app
 

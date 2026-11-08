@@ -24,6 +24,7 @@
               <th scope="col">Plano</th>
               <th scope="col">Espaço para arquivos</th>
               {% for coluna in colunas %}<th scope="col">{{ coluna }}</th>{% endfor %}
+              <th scope="col">Exclusão por inatividade</th>
             </tr>
           </thead>
           <tbody>
@@ -37,6 +38,7 @@
                 {% for rotulo, valor in plano.limites %}
                   <td data-rotulo="{{ rotulo }}">{% if valor is none %}<span class="plano-ilimitado">Ilimitado</span>{% else %}{{ valor }}{% endif %}</td>
                 {% endfor %}
+                <td data-rotulo="Exclusão por inatividade">{% if plano.inatividade is none %}<span class="plano-ilimitado">Ilimitado</span>{% else %}{{ plano.inatividade }} dias{% endif %}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -67,6 +69,8 @@
   <section class="publico-secao publico-perguntas" aria-labelledby="perguntas-planos-titulo">
     <h2 id="perguntas-planos-titulo">Perguntas rápidas</h2>
     <dl>
+      <dt>{{ clipe() }}O que é a exclusão por inatividade?</dt>
+      <dd>É o tempo que a conta pode ficar sem nenhum acesso. Depois desse prazo, a conta é excluída com todas as informações, os arquivos e as imagens. Três dias antes, enviamos um aviso por e-mail, e basta entrar no sistema para manter a conta. Com Ilimitado, a conta nunca é excluída por falta de uso.</dd>
       <dt>{{ clipe() }}O que entra no espaço para arquivos?</dt>
       <dd>Os arquivos anexados aos cartões e as imagens da descrição. O espaço em uso aparece no rodapé da barra lateral e na caixa de cada demanda.</dd>
       <dt>{{ clipe() }}Os cartões ocultos e concluídos contam no limite?</dt>

@@ -248,7 +248,10 @@ def test_tabela_dos_planos_tem_rotulos_para_o_celular(app):
     linha = html.split("<tbody>")[1].split("</tr>")[0]
 
     rotulos = re.findall(r'data-rotulo="([^"]+)"', linha)
-    assert rotulos == ["Espaço para arquivos", "Categorias", "Projetos", "Demandas", "Listas de tarefas", "Vídeos"]
+    assert rotulos == [
+        "Espaço para arquivos", "Categorias", "Projetos", "Demandas", "Listas de tarefas", "Vídeos",
+        "Exclusão por inatividade",
+    ]
 
 
 def test_manual_tem_o_indice_e_as_secoes(app):
@@ -269,7 +272,8 @@ def test_paginas_publicas_usam_o_vocabulario_da_interface(app, endereco):
     html = re.sub(r'<section id="lista-de-tarefas".*?</section>', "", html, flags=re.S)
     texto = re.sub(r"listas? de tarefas", "", texto_visivel(html), flags=re.I)
 
-    assert not re.search(r"atividade", texto, re.I)
+    # "inatividade" (exclusão por inatividade) não é o termo antigo da demanda.
+    assert not re.search(r"atividades?", texto, re.I)
     assert not re.search(r"generalista", texto, re.I)
     assert not re.search(r"tarefa", texto, re.I)
     assert not re.search(r"\blistas?\b", texto, re.I)
@@ -388,3 +392,16 @@ def test_atendimento_tem_limite_por_ip(envio):
         assert cliente.get("/atendimento").status_code == 200
     finally:
         limitador.zerar()
+
+
+def test_planos_mostra_a_exclusao_por_inatividade(app):
+    db.session.add(PlanoDeUsuario(nome="Quinzenal", armazenamento_mb=20, dias_de_inatividade=15))
+    db.session.commit()
+
+    html = app.test_client().get("/planos").get_data(as_text=True)
+
+    linha = html.split("Quinzenal")[1].split("</tr>")[0]
+    assert '<td data-rotulo="Exclusão por inatividade">15 dias</td>' in linha
+    padrao = html.split('class="plano-padrao"')[1].split("</tr>")[0]
+    assert 'data-rotulo="Exclusão por inatividade"><span class="plano-ilimitado">Ilimitado</span>' in padrao
+    assert "O que é a exclusão por inatividade?" in html

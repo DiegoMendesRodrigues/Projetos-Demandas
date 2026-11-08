@@ -1761,15 +1761,9 @@ def editar_usuario(usuario_id):
     return render_template("usuario.html", form=form, usuario=usuario)
 
 
-@principal.route("/administracao/usuarios/<int:usuario_id>/excluir", methods=["POST"])
-@auth_required()
-def excluir_usuario(usuario_id):
-    exigir_administrador()
-    usuario = db.get_or_404(Usuario, usuario_id)
-    if usuario.id == current_user.id:
-        flash("Você não pode excluir a sua própria conta.", "erro")
-        return redirect(url_for("principal.usuarios"))
-
+def apagar_conta(usuario):
+    """Exclui a conta com tudo o que é dela: categorias, projetos, cartões, grupos que administra,
+    anexos, imagens da descrição e a foto. Usada pelo administrador e pela exclusão por inatividade."""
     anexos = (
         Anexo.query.join(Tarefa).join(Projeto).filter(Projeto.usuario_id == usuario.id).all()
     )
@@ -1784,6 +1778,18 @@ def excluir_usuario(usuario_id):
     db.session.delete(usuario)
     db.session.commit()
     apagar_arquivos(codigos)
+
+
+@principal.route("/administracao/usuarios/<int:usuario_id>/excluir", methods=["POST"])
+@auth_required()
+def excluir_usuario(usuario_id):
+    exigir_administrador()
+    usuario = db.get_or_404(Usuario, usuario_id)
+    if usuario.id == current_user.id:
+        flash("Você não pode excluir a sua própria conta.", "erro")
+        return redirect(url_for("principal.usuarios"))
+
+    apagar_conta(usuario)
     flash("Usuário excluído.", "sucesso")
     return redirect(url_for("principal.usuarios"))
 
@@ -2169,6 +2175,7 @@ def salvar_plano(plano, form):
     plano.armazenamento_mb = form.armazenamento_mb.data
     for chave in LIMITES_DO_PLANO:
         setattr(plano, chave, form[chave].data)
+    plano.dias_de_inatividade = form.dias_de_inatividade.data
     if form.padrao.data and not plano.padrao:
         # Só um plano é o padrão: marcar este desmarca o anterior.
         PlanoDeUsuario.query.filter(PlanoDeUsuario.padrao == true()).update({"padrao": False})

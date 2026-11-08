@@ -18,7 +18,7 @@ from models import (
 
 DADOS_DO_PLANO = {
     "nome": "Básico", "armazenamento_mb": "10", "categorias": "10", "projetos": "10",
-    "atividades": "50", "listas_de_tarefas": "50", "videos": "50",
+    "atividades": "50", "listas_de_tarefas": "50", "videos": "50", "dias_de_inatividade": "",
 }
 
 
@@ -238,7 +238,7 @@ def test_listagem_marca_o_plano_padrao(administrador):
     html = administrador.get("/administracao/planos").get_data(as_text=True)
 
     assert '<td>Iniciante <span class="selo-padrao">Padrão</span></td>' in html
-    assert '<td class="tabela-capacidades" data-rotulo="Capacidades">10 MB / * / * / * / * / *</td>' in html
+    assert '<td class="tabela-capacidades" data-rotulo="Capacidades">10 MB / * / * / * / * / * / *</td>' in html
 
 
 def test_rodape_mostra_o_nome_do_plano(cliente):

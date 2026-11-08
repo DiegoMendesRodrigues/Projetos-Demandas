@@ -1,28 +1,43 @@
 {# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
 {# Desenvolvido por Diego Mendes Rodrigues -#}
+{#- Em duas colunas (uma só abaixo de 760 px): o nome, o armazenamento, as categorias e os projetos à
+    esquerda; as demandas, as listas de tarefas, os vídeos e os dias de inatividade à direita. #}
 {% extends "base.html" %}
 {% set titulo = 'Alterar plano' if plano else 'Novo plano' %}
 {% block title %}{{ titulo }} - Projetos &amp; Demandas{% endblock %}
+{% macro lista(chave) -%}
+  <label for="{{ chave }}">{{ form[chave].label.text }}</label>
+  {{ form[chave](required=True) }}
+  {% for erro in form[chave].errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+{%- endmacro %}
 {% block main %}
-  <div class="cartao-central perfil">
+  <div class="cartao-central perfil perfil-largo plano-formulario">
     <h1>{{ titulo }}</h1>
     <form action="{{ url_for('principal.editar_plano', plano_id=plano.id) if plano else url_for('principal.criar_plano') }}" method="post" autocomplete="off">
       {{ form.hidden_tag() }}
-      <label for="nome">{{ form.nome.label.text }}</label>
-      {{ form.nome(required=True, maxlength=100, autocomplete='off') }}
-      {% for erro in form.nome.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
-      <label for="armazenamento_mb">{{ form.armazenamento_mb.label.text }}</label>
-      {{ form.armazenamento_mb(type='number', required=True, min=1, max=1048576, step=1, inputmode='numeric') }}
-      {% for erro in form.armazenamento_mb.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
-      {% for chave in limites %}
-        <label for="{{ chave }}">{{ form[chave].label.text }}</label>
-        {{ form[chave]() }}
-        {% for erro in form[chave].errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
-      {% endfor %}
+      <div class="perfil-colunas">
+        <div class="perfil-coluna">
+          <label for="nome">{{ form.nome.label.text }}</label>
+          {{ form.nome(required=True, maxlength=100, autocomplete='off') }}
+          {% for erro in form.nome.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+          <label for="armazenamento_mb">{{ form.armazenamento_mb.label.text }}</label>
+          {{ form.armazenamento_mb(type='number', required=True, min=1, max=1048576, step=1, inputmode='numeric') }}
+          {% for erro in form.armazenamento_mb.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+          {{ lista('categorias') }}
+          {{ lista('projetos') }}
+        </div>
+        <div class="perfil-coluna">
+          {{ lista('atividades') }}
+          {{ lista('listas_de_tarefas') }}
+          {{ lista('videos') }}
+          {{ lista('dias_de_inatividade') }}
+          <p class="dica-do-campo">A conta que ficar mais dias que isso sem entrar no sistema é excluída, com todas as informações, os arquivos e as imagens. O aviso por e-mail sai 3 dias antes. As contas de administradores nunca são excluídas.</p>
+        </div>
+      </div>
       <label class="opcao-marcada">{{ form.padrao() }}{{ form.padrao.label.text }}</label>
       <p class="dica-do-campo">As contas criadas pela tela Criar conta recebem este plano. Só um plano pode ser o padrão.</p>
       {% for erro in form.padrao.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
-      <div class="formulario-acoes">
+      <div class="perfil-acoes">
         <a class="botao" href="{{ url_for('principal.planos') }}">Cancelar</a>
         <button class="botao botao-primario" type="submit">Salvar</button>
       </div>

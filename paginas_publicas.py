@@ -54,6 +54,7 @@ def linhas_dos_planos():
             "nome": plano.nome,
             "padrao": plano.padrao,
             "armazenamento_mb": plano.armazenamento_mb,
+            "inatividade": plano.dias_de_inatividade,
             "limites": [
                 (rotulo, getattr(plano, chave)) for chave, rotulo in COLUNAS_DOS_PLANOS.items()
             ],

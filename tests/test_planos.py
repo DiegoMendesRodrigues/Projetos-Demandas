@@ -15,6 +15,7 @@ DADOS = {
     "atividades": "",
     "listas_de_tarefas": "50",
     "videos": "500",
+    "dias_de_inatividade": "30",
 }
 
 
@@ -117,7 +118,7 @@ def test_listagem_mostra_so_o_nome_e_as_acoes(administrador):
     assert "<td>Básico</td>" in tabela
     # A coluna Capacidades vem logo depois do Nome.
     depois_do_nome = tabela.split("<td>Básico</td>")[1].strip()
-    assert depois_do_nome.startswith('<td class="tabela-capacidades" data-rotulo="Capacidades">100 MB / 10 / 200 / * / 50 / 500</td>')
+    assert depois_do_nome.startswith('<td class="tabela-capacidades" data-rotulo="Capacidades">100 MB / 10 / 200 / * / 50 / 500 / 30 dias</td>')
     assert 'href="/administracao/planos/{}/editar"'.format(plano.id) in tabela and "Alterar</a>" in tabela
     assert 'data-url-excluir="/administracao/planos/{}/excluir"'.format(plano.id) in tabela and "Excluir</button>" in tabela
 
@@ -208,10 +209,10 @@ def test_listagem_mostra_a_quantidade_de_usuarios_centralizada(administrador, ou
 
 
 @pytest.mark.parametrize("limites, capacidades", [
-    ({}, "250 MB / * / * / * / * / *"),
-    ({"categorias": 10, "projetos": 20, "atividades": 50, "listas_de_tarefas": 100, "videos": 500},
-     "250 MB / 10 / 20 / 50 / 100 / 500"),
-    ({"projetos": 400, "videos": 25}, "250 MB / * / 400 / * / * / 25"),
+    ({}, "250 MB / * / * / * / * / * / *"),
+    ({"categorias": 10, "projetos": 20, "atividades": 50, "listas_de_tarefas": 100, "videos": 500, "dias_de_inatividade": 15},
+     "250 MB / 10 / 20 / 50 / 100 / 500 / 15 dias"),
+    ({"projetos": 400, "videos": 25, "dias_de_inatividade": 180}, "250 MB / * / 400 / * / * / 25 / 180 dias"),
 ])
 def test_capacidades_na_ordem_dos_campos_com_asterisco_para_ilimitadas(limites, capacidades):
     assert PlanoDeUsuario(nome="Ouro", armazenamento_mb=250, **limites).capacidades == capacidades
@@ -297,3 +298,76 @@ def test_ordem_desconhecida_usa_as_capacidades(administrador):
     criar(administrador, nome="Aaa grande", armazenamento_mb="500")
 
     assert ordem_da_listagem(administrador, "?ordem=senha") == ["Iniciante", "Aaa grande"]
+
+
+# ---------- Dias de Inatividade para a Exclusão da Conta
+
+
+def caixa(html, campo):
+    return html.split('name="{}"'.format(campo))[1].split("</select>")[0]
+
+
+def test_dias_de_inatividade_vem_abaixo_dos_videos_com_as_opcoes(administrador):
+    html = administrador.get("/administracao/planos/novo").get_data(as_text=True)
+
+    assert "Dias de Inatividade para a Exclusão da Conta" in html
+    assert opcoes(html, "dias_de_inatividade") == ["15", "30", "60", "90", "120", "180", "Ilimitado"]
+    assert '<option selected value="15">15</option>' in caixa(html, "dias_de_inatividade")
+    assert html.index('name="videos"') < html.index('name="dias_de_inatividade"')
+
+
+def test_formulario_do_plano_tem_duas_colunas(administrador):
+    html = administrador.get("/administracao/planos/novo").get_data(as_text=True)
+
+    assert 'class="perfil-colunas"' in html
+    colunas = html.split('class="perfil-coluna"')[1:]
+    assert len(colunas) == 2
+    assert 'name="nome"' in colunas[0] and 'name="videos"' not in colunas[0]
+    assert 'name="videos"' in colunas[1] and 'name="dias_de_inatividade"' in colunas[1]
+
+
+@pytest.mark.parametrize("valor, esperado", [("15", 15), ("180", 180), ("", None)])
+def test_criar_plano_grava_os_dias_de_inatividade(administrador, valor, esperado):
+    assert criar(administrador, dias_de_inatividade=valor).status_code == 302
+
+    assert PlanoDeUsuario.query.filter_by(padrao=False).one().dias_de_inatividade == esperado
+
+
+@pytest.mark.parametrize("valor", ["45", "abc", "0"])
+def test_dias_de_inatividade_fora_da_lista_sao_recusados(administrador, valor):
+    resposta = criar(administrador, dias_de_inatividade=valor)
+
+    assert resposta.status_code == 200
+    assert PlanoDeUsuario.query.filter_by(padrao=False).count() == 0
+
+
+def test_dias_de_inatividade_e_obrigatorio(administrador):
+    dados = {chave: valor for chave, valor in DADOS.items() if chave != "dias_de_inatividade"}
+
+    resposta = administrador.post("/administracao/planos/novo", data=dados)
+
+    assert resposta.status_code == 200
+    assert "Escolha os dias de inatividade para a exclusão da conta." in resposta.get_data(as_text=True)
+    assert PlanoDeUsuario.query.filter_by(padrao=False).count() == 0
+
+
+def test_alterar_mostra_e_salva_os_dias_de_inatividade(administrador):
+    criar(administrador)
+    plano = PlanoDeUsuario.query.filter_by(padrao=False).one()
+    url = "/administracao/planos/{}/editar".format(plano.id)
+
+    assert 'selected value="30">30' in caixa(administrador.get(url).get_data(as_text=True), "dias_de_inatividade")
+
+    assert administrador.post(url, data={**DADOS, "dias_de_inatividade": ""}).status_code == 302
+    db.session.refresh(plano)
+    assert plano.dias_de_inatividade is None
+    assert 'selected value="">Ilimitado' in caixa(administrador.get(url).get_data(as_text=True), "dias_de_inatividade")
+
+
+def test_plano_criado_pelo_sistema_e_ilimitado(app):
+    assert PlanoDeUsuario.query.filter_by(padrao=True).one().dias_de_inatividade is None
+
+
+@pytest.mark.parametrize("dias, rotulo", [(None, "Ilimitado"), (15, "15 dias")])
+def test_rotulo_da_inatividade(dias, rotulo):
+    assert PlanoDeUsuario(nome="X", armazenamento_mb=1, dias_de_inatividade=dias).rotulo_da_inatividade == rotulo

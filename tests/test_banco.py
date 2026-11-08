@@ -675,3 +675,31 @@ def test_conceder_acesso_so_age_no_oracle_e_recusa_nome_invalido(tmp_path):
 
     with pytest.raises(ErroNaConfiguracaoDoBanco):
         conceder_acesso(MotorOracle, "pd_app; DROP")
+
+
+def test_migracao_0002_comeca_a_contar_a_inatividade_agora_e_deixa_os_planos_ilimitados(tmp_path):
+    from datetime import datetime, timedelta
+
+    from alembic import command
+
+    motor = motor_sqlite(tmp_path)
+    comandos_do_banco._executar_alembic(motor, command.upgrade, "0001")
+    with motor.begin() as conexao:
+        conexao.execute(text("INSERT INTO plano_de_usuario (id, nome, armazenamento_mb, padrao) VALUES (1, 'Iniciante', 10, 1)"))
+        conexao.execute(text(
+            "INSERT INTO usuario (id, nome, email, password, active, fs_uniquifier, tema, mostrar_ocultas, avatar,"
+            " foto, administrador, telefone, aviso_destinatarios, aviso_antecedencia, trocar_senha, plano_id)"
+            " VALUES (1, 'Ana', 'ana@exemplo.com', 'x', 1, 'u1', 'azul', 0, 'a', '', 0, '', 'ambos', 2, 0, 1)"
+        ))
+
+    from config import FUSO_HORARIO
+
+    antes = datetime.now(FUSO_HORARIO).replace(tzinfo=None) - timedelta(seconds=1)
+    comandos_do_banco.atualizar_estrutura(motor)
+
+    with motor.connect() as conexao:
+        acesso, aviso = conexao.execute(text("SELECT ultimo_acesso, aviso_de_exclusao_em FROM usuario")).one()
+        dias = conexao.execute(text("SELECT dias_de_inatividade FROM plano_de_usuario")).scalar()
+    assert datetime.fromisoformat(str(acesso)) >= antes
+    assert aviso is None
+    assert dias is None

@@ -9,6 +9,7 @@
 - Páginas com dados do usuário não ficam guardadas no navegador nem em proxies (no-store).
 - Só os endereços de HOSTS_PERMITIDOS são atendidos, para os links dos e-mails não serem desviados.
 - Troca obrigatória da senha da conta inicial no primeiro login.
+- Último acesso de cada conta, para a exclusão por inatividade.
 - Criptografia da senha do SMTP gravada no banco, com uma chave derivada da SECRET_KEY.
 - Permissões dos arquivos do banco e das chaves.
 - Validação da força da senha com mensagens em português.
@@ -18,6 +19,7 @@ import os
 import threading
 import time
 from collections import defaultdict, deque
+from datetime import timedelta
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
@@ -25,6 +27,9 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from flask import current_app, flash, g, jsonify, redirect, render_template, request
 from flask_security import PasswordUtil, current_user, url_for_security
 from flask_security.utils import get_message
+
+from extensions import db
+from models import agora_em_sao_paulo
 
 # ---------- Cabeçalhos
 
@@ -284,6 +289,48 @@ def exigir_troca_de_senha():
         return jsonify(erro=MENSAGEM_DA_TROCA), 403
     flash(MENSAGEM_DA_TROCA, "aviso")
     return redirect(url_for_security("change_password"))
+
+
+# ---------- Último acesso (inatividade.py)
+
+# O último acesso só é gravado de novo depois deste intervalo: não é preciso um UPDATE por clique.
+INTERVALO_DO_ACESSO = timedelta(minutes=5)
+# Pedidos que o navegador faz sozinho e não são uso do sistema pela pessoa. A consulta da versão
+# do quadro compartilhado roda a cada 20 s: com ela, uma aba esquecida manteria a conta para sempre.
+FORA_DO_ACESSO = {
+    "static",
+    "principal.versao_do_quadro",
+    "principal.service_worker",
+    "principal.manifesto",
+    "principal.favicon",
+    "principal.offline",
+}
+
+
+def marcar_acesso(usuario, momento, sempre=False):
+    """Grava o último acesso e apaga o aviso de exclusão por inatividade, se já houver um."""
+    anterior = usuario.ultimo_acesso
+    if not sempre and anterior is not None and momento - anterior < INTERVALO_DO_ACESSO and not usuario.aviso_de_exclusao_em:
+        return False
+    usuario.ultimo_acesso = momento
+    usuario.aviso_de_exclusao_em = None
+    db.session.commit()
+    return True
+
+
+def registrar_acesso():
+    """before_request: o uso do sistema por quem está logado conta como acesso."""
+    if request.endpoint is None or request.endpoint in FORA_DO_ACESSO:
+        return None
+    if not current_app.config.get("BANCO_PRONTO", True) or not current_user.is_authenticated:
+        return None
+    marcar_acesso(current_user, agora_em_sao_paulo())
+    return None
+
+
+def acesso_no_login(_app, user, **_dados):
+    """Sinal user_authenticated do Flask-Security: o login sempre grava o último acesso."""
+    marcar_acesso(user, agora_em_sao_paulo(), sempre=True)
 
 
 # ---------- Senha do SMTP
