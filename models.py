@@ -698,6 +698,20 @@ class ConfiguracaoEmail(db.Model):
     nome_envio = db.Column(db.String(200), nullable=False)
 
 
+class ConfiguracaoDoYoutube(db.Model):
+    """A chave da API do YouTube (Data API v3), salva na tela de Configurações. Há uma linha só.
+
+    Com ela, as informações dos vídeos vêm da API oficial, que não pede a verificação de robô dos
+    servidores de datacenter (youtube.informacoes_da_api)."""
+
+    __tablename__ = "configuracao_youtube"
+
+    # Sempre 1, como em ConfiguracaoEmail.
+    id = db.Column(db.Integer, primary_key=True, autoincrement=False)
+    # Cifrada como a senha do SMTP (cifrar e decifrar, em seguranca.py).
+    chave = db.Column(TextoVazio(500), nullable=False, default="")
+
+
 class Imagem(db.Model):
     __tablename__ = "imagem"
 

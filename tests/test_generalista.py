@@ -401,3 +401,27 @@ def test_interface_diz_cartao_de_contexto_e_nao_generalista(cliente, criar_proje
     frases = [texto for texto in re.findall(r'"([^"\n]*)"', javascript) if " " in texto]
     assert not [frase for frase in frases if re.search(r"generalista", frase, re.I)]
     assert '"Editar cartão de contexto"' in javascript
+
+
+def test_receber_pelo_oembed_mantem_a_descricao_do_mesmo_video(cliente, criar_projeto, youtube_falso, monkeypatch):
+    criar(cliente, criar_projeto(cliente.usuario_id), ["video"], video_endereco=ENDERECO)
+    tarefa = Tarefa.query.one()
+    youtube_falso["erro"] = youtube.ErroDeConexao()
+    monkeypatch.setattr(youtube, "baixar_oembed", lambda codigo: {"title": "Pelo oEmbed", "author_name": "jawed"})
+
+    editar(cliente, tarefa, ["video"], video_endereco=ENDERECO, video_atualizar="1")
+
+    video = db.session.get(VideoDoYoutube, tarefa.id)
+    assert (video.titulo, video.descricao, video.duracao) == ("Pelo oEmbed", "Elefantes", "0:19")
+
+
+def test_outro_video_pelo_oembed_fica_sem_a_descricao_antiga(cliente, criar_projeto, youtube_falso, monkeypatch):
+    criar(cliente, criar_projeto(cliente.usuario_id), ["video"], video_endereco=ENDERECO)
+    tarefa = Tarefa.query.one()
+    youtube_falso["erro"] = youtube.ErroDeConexao()
+    monkeypatch.setattr(youtube, "baixar_oembed", lambda codigo: {"title": "Outro", "author_name": "alguém"})
+
+    editar(cliente, tarefa, ["video"], video_endereco="https://www.youtube.com/watch?v=" + OUTRO_CODIGO)
+
+    video = db.session.get(VideoDoYoutube, tarefa.id)
+    assert (video.codigo, video.titulo, video.descricao, video.duracao) == (OUTRO_CODIGO, "Outro", "", "")

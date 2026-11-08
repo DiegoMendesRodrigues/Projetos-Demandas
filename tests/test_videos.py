@@ -19,6 +19,8 @@ from models import (
 )
 
 CODIGO = "jNQXAC9IVRw"
+# A função real, guardada antes de o conftest.py trocá-la em cada teste.
+BAIXAR_OEMBED = youtube.baixar_oembed
 ENDERECO = "https://www.youtube.com/watch?v=" + CODIGO
 
 
@@ -496,3 +498,148 @@ def test_dica_do_simplificar_fica_acima_do_botao():
     regra = css.split(".botao-simplificar[data-dica]::after {")[1].split("}")[0]
 
     assert "top: auto;" in regra and "bottom: calc(100% + 6px);" in regra
+
+
+# ---------- Reserva pelo oEmbed (servidores em que o YouTube pede a verificação de robô)
+
+PAGINA_DE_ROBO = '<html><script>var ytInitialPlayerResponse = {};</script></html>'.format(json.dumps({
+    "playabilityStatus": {"status": "LOGIN_REQUIRED", "reason": "Faça login para confirmar que você não é um robô"},
+}))
+OEMBED = {"title": "Me at the zoo", "author_name": "jawed", "type": "video"}
+
+
+@pytest.fixture
+def oembed_falso(monkeypatch):
+    estado = {"dados": dict(OEMBED), "pedidos": [], "erro": None}
+
+    def baixar(codigo):
+        estado["pedidos"].append(codigo)
+        if estado["erro"]:
+            raise estado["erro"]
+        return estado["dados"]
+
+    monkeypatch.setattr(youtube, "baixar_oembed", baixar)
+    return estado
+
+
+def test_verificacao_de_robo_usa_o_titulo_e_o_autor_do_oembed(youtube_falso, oembed_falso, caplog):
+    youtube_falso["pagina"] = PAGINA_DE_ROBO
+
+    dados = youtube.informacoes_do_codigo(CODIGO)
+
+    assert dados == {"codigo": CODIGO, "autor": "jawed", "titulo": "Me at the zoo", "descricao": "",
+                     "publicacao": None, "duracao": "", "parcial": True}
+    assert oembed_falso["pedidos"] == [CODIGO]
+    assert "LOGIN_REQUIRED" in caplog.text and "oEmbed" in caplog.text
+
+
+def test_falha_de_conexao_na_pagina_tambem_tenta_o_oembed(youtube_falso, oembed_falso):
+    youtube_falso["erro"] = youtube.ErroDeConexao()
+
+    assert youtube.informacoes_do_codigo(CODIGO)["titulo"] == "Me at the zoo"
+
+
+def test_sem_conexao_nas_duas_continua_falha_de_conexao(youtube_falso, oembed_falso):
+    youtube_falso["erro"] = youtube.ErroDeConexao()
+    oembed_falso["erro"] = youtube.ErroDeConexao()
+
+    with pytest.raises(youtube.ErroDeConexao):
+        youtube.informacoes_do_codigo(CODIGO)
+
+
+def test_pagina_completa_nao_usa_o_oembed(youtube_falso, oembed_falso):
+    assert youtube.informacoes_do_codigo(CODIGO)["duracao"] == "0:19"
+    assert oembed_falso["pedidos"] == []
+
+
+@pytest.mark.parametrize("erro", [youtube.ErroNasInformacoes("oEmbed respondeu 404"), youtube.ErroDeConexao()])
+def test_sem_a_pagina_e_sem_o_oembed_vale_o_erro_da_pagina(youtube_falso, oembed_falso, erro, caplog):
+    youtube_falso["pagina"] = PAGINA_DE_ROBO
+    oembed_falso["erro"] = erro
+
+    with pytest.raises(youtube.ErroNasInformacoes):
+        youtube.informacoes_do_codigo(CODIGO)
+    assert "sem as informações do vídeo {}".format(CODIGO) in caplog.text
+    assert "LOGIN_REQUIRED" in caplog.text
+
+
+def test_oembed_sem_titulo_e_recusado(youtube_falso, oembed_falso):
+    youtube_falso["pagina"] = PAGINA_DE_ROBO
+    oembed_falso["dados"] = {"author_name": "jawed"}
+
+    with pytest.raises(youtube.ErroNasInformacoes):
+        youtube.informacoes_do_codigo(CODIGO)
+
+
+def test_criar_video_pelo_oembed_no_servidor_bloqueado(cliente, criar_projeto, youtube_falso, oembed_falso):
+    projeto = criar_projeto(cliente.usuario_id)
+    youtube_falso["pagina"] = PAGINA_DE_ROBO
+
+    resposta = criar(cliente, projeto)
+
+    assert resposta.status_code == 201, resposta.get_data(as_text=True)
+    video = VideoDoYoutube.query.one()
+    assert (video.titulo, video.autor, video.duracao, video.descricao) == ("Me at the zoo", "jawed", "", "")
+
+
+def test_baixar_oembed_monta_o_endereco_so_com_o_codigo(monkeypatch):
+    pedidos = []
+
+    class Resposta:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def read(self, _tamanho):
+            return json.dumps(OEMBED).encode()
+
+    def abrir(requisicao, timeout):
+        pedidos.append(requisicao.full_url)
+        return Resposta()
+
+    monkeypatch.setattr(youtube.urllib.request, "urlopen", abrir)
+
+    assert BAIXAR_OEMBED(CODIGO) == OEMBED
+    assert pedidos == ["https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D{}&format=json".format(CODIGO)]
+
+
+@pytest.mark.parametrize("codigo_http", [401, 403, 404])
+def test_baixar_oembed_converte_os_erros_http(monkeypatch, codigo_http):
+    import urllib.error
+
+    def recusar(requisicao, timeout):
+        raise urllib.error.HTTPError(requisicao.full_url, codigo_http, "erro", {}, None)
+
+    monkeypatch.setattr(youtube.urllib.request, "urlopen", recusar)
+    with pytest.raises(youtube.ErroNasInformacoes):
+        BAIXAR_OEMBED(CODIGO)
+
+
+def test_baixar_oembed_converte_os_erros_de_rede(monkeypatch):
+    def recusar(requisicao, timeout):
+        raise OSError("sem rede")
+
+    monkeypatch.setattr(youtube.urllib.request, "urlopen", recusar)
+    with pytest.raises(youtube.ErroDeConexao):
+        BAIXAR_OEMBED(CODIGO)
+
+
+def test_atualizar_pelo_oembed_mantem_a_descricao_a_data_e_a_duracao(cliente, criar_projeto, youtube_falso, oembed_falso):
+    youtube_falso["pagina"] = pagina(**{"lengthSeconds": "754"}).replace(
+        '"videoDetails"', '"microformat": {"playerMicroformatRenderer": {"publishDate": "2005-04-23"}}, "videoDetails"'
+    )
+    criar(cliente, criar_projeto(cliente.usuario_id))
+    tarefa = Tarefa.query.one()
+    youtube_falso["pagina"] = PAGINA_DE_ROBO
+    oembed_falso["dados"] = {"title": "Título do oEmbed", "author_name": "outro"}
+
+    resposta = atualizar(cliente, tarefa)
+
+    assert resposta.status_code == 200
+    assert resposta.get_json() == {"autor": "outro", "titulo": "Título do oEmbed", "descricao": "Elefantes; muito longos",
+                                   "duracao": "12:34", "publicacao": "23/04/2005"}
+    video = db.session.get(VideoDoYoutube, tarefa.id)
+    assert (video.titulo, video.descricao, video.duracao, video.publicado_em) == (
+        "Título do oEmbed", "Elefantes; muito longos", "12:34", date(2005, 4, 23))

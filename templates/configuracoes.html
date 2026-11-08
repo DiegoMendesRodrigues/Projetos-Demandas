@@ -59,6 +59,21 @@
         <button class="botao botao-primario" type="submit">Salvar</button>
       </div>
     </form>
+    {#- Formulário separado: a chave é salva sem exigir a configuração do envio de e-mails. #}
+    <form class="configuracoes-youtube" id="youtube" action="{{ url_for('principal.chave_do_youtube') }}" method="post" autocomplete="off" aria-labelledby="youtube-titulo">
+      {% if youtube_form.meta.csrf %}{{ youtube_form.csrf_token(id="csrf_token_youtube") }}{% endif %}
+      <h2 class="subtitulo" id="youtube-titulo">Vídeos do YouTube</h2>
+      <p class="anexos-dica">Com a chave da YouTube Data API v3, as informações dos vídeos (título, autor, descrição, data de publicação e duração) vêm da API oficial do Google. Sem ela, vêm da página pública do vídeo, que o YouTube costuma bloquear nos servidores de datacenter: nesse caso, só o título e o autor são gravados. A chave é gratuita, criada no Google Cloud (INSTALL.md).</p>
+      <p class="configuracoes-situacao" data-situacao-da-chave>{% if tem_chave_do_youtube %}Chave salva.{% else %}Nenhuma chave salva.{% endif %}</p>
+      <label for="chave">{{ youtube_form.chave.label.text }}</label>
+      {{ youtube_form.chave(maxlength=100, autocomplete='new-password', spellcheck='false') }}
+      {% if tem_chave_do_youtube %}<p class="anexos-dica">Informe uma nova chave para trocá-la. A chave salva nunca é mostrada.</p>{% endif %}
+      {% for erro in youtube_form.chave.errors %}<p class="erro-campo">{{ erro }}</p>{% endfor %}
+      <div class="perfil-acoes">
+        {% if tem_chave_do_youtube %}<button class="botao" type="submit" name="acao" value="remover" formnovalidate>Remover a chave</button>{% endif %}
+        <button class="botao botao-primario" type="submit" name="acao" value="salvar">Salvar a chave</button>
+      </div>
+    </form>
   </div>
   {% include "_ver_senha.html" %}
 {% endblock %}

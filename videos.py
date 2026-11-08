@@ -3,8 +3,10 @@
 """Os vídeos aceitos pelo sistema: identifica a plataforma pelo endereço e lê as informações nela.
 
 As funções de youtube.py e vimeo.py são chamadas pelo módulo, na hora, para os testes poderem
-trocar o acesso à internet (youtube.baixar_pagina e vimeo.baixar_dados).
+trocar o acesso à internet (youtube.baixar_da_api, youtube.baixar_pagina e vimeo.baixar_dados).
 """
+from flask import current_app
+
 import vimeo
 import youtube
 from youtube import EnderecoInvalido
@@ -38,9 +40,25 @@ def endereco_do_player(plataforma, codigo):
     return "https://www.youtube-nocookie.com/embed/{}".format(codigo)
 
 
+def chave_do_youtube():
+    """A chave da API do YouTube salva em Configurações, já decifrada, ou vazia."""
+    # Importados aqui: models.py importa este módulo.
+    from extensions import db
+    from models import ConfiguracaoDoYoutube
+    from seguranca import decifrar
+
+    salva = db.session.get(ConfiguracaoDoYoutube, 1)
+    if salva is None or not salva.chave:
+        return ""
+    return decifrar(salva.chave, current_app.config["SECRET_KEY"])
+
+
 def informacoes(plataforma, codigo):
     """As informações do vídeo, com "plataforma" e "miniatura" (vazia no YouTube, que a monta pelo código)."""
-    dados = dict(MODULOS[plataforma].informacoes_do_codigo(codigo))
+    if plataforma == YOUTUBE:
+        dados = dict(youtube.informacoes_do_codigo(codigo, chave_do_youtube()))
+    else:
+        dados = dict(MODULOS[plataforma].informacoes_do_codigo(codigo))
     dados["plataforma"] = plataforma
     dados.setdefault("miniatura", "")
     return dados

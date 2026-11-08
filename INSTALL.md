@@ -353,7 +353,22 @@ sudo journalctl -u projetos-demandas -f
 - **Cadastro aberto:** qualquer pessoa que acesse o endereço pode criar uma conta. Para impedir novos cadastros, altere `SECURITY_REGISTERABLE` para `False` em `config.py` depois de criar as contas necessárias e reinicie o serviço.
 - **Conta inicial:** ela é a conta administradora, com acesso ao menu Administração (Usuários, Planos de Usuários e Configurações), mas sem acesso aos projetos dos outros usuários.
 - **Planos de Usuários:** toda conta nova, inclusive as criadas pela tela de cadastro, recebe o plano marcado como padrão. Revise em Administração > Planos de Usuários o espaço e os limites desse plano antes de liberar o acesso.
-- **Vídeos do YouTube:** para buscar as informações dos vídeos, o servidor precisa acessar `https://www.youtube.com` pela internet. Se a saída do servidor for bloqueada, essa função mostra uma mensagem de erro e o restante do sistema continua funcionando.
+- **Vídeos do YouTube:** para buscar as informações dos vídeos, o servidor precisa acessar a internet. Se a saída do servidor for bloqueada, essa função mostra uma mensagem de erro e o restante do sistema continua funcionando. Nos servidores de datacenter, o YouTube costuma responder com a verificação "confirme que você não é um robô" no lugar da página do vídeo. Sem a chave da API (abaixo), o sistema usa então o oEmbed público do YouTube, que traz só o título e o autor, e o vídeo é gravado sem a descrição, a data de publicação e a duração. O motivo de cada falha fica nos registros do serviço (`sudo journalctl -u projetos-demandas | grep YouTube`). Para conferir a saída do servidor para o YouTube:
+
+  ```bash
+  curl -sS -o /dev/null -w "%{http_code}\n" "https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DjNQXAC9IVRw&format=json"
+  curl -sS -A "Mozilla/5.0" "https://www.youtube.com/watch?v=jNQXAC9IVRw" | grep -o '"playabilityStatus":{"status":"[A-Z_]*"' | head -1
+  ```
+
+  O primeiro deve mostrar `200`, e o segundo, `"status":"OK"`; `LOGIN_REQUIRED` é a verificação de robô. Sem resposta nenhuma, a saída do servidor para a internet está bloqueada (firewall do provedor, DNS ou IPv6).
+- **Chave da API do YouTube:** com ela, as informações vêm da YouTube Data API v3, sem a verificação de robô, com a descrição, a data e a duração. A chave é gratuita, e a cota padrão (10.000 unidades por dia; cada vídeo usa 1) sobra para este uso. Para criá-la:
+  1. Em <https://console.cloud.google.com>, crie um projeto (ou escolha um).
+  2. Em **APIs e serviços > Biblioteca**, procure **YouTube Data API v3** e clique em **Ativar**.
+  3. Em **APIs e serviços > Credenciais**, clique em **Criar credenciais > Chave de API** e copie a chave.
+  4. Na chave criada, em **Restrições de API**, escolha **Restringir chave** e marque só a **YouTube Data API v3**. Em **Restrições de aplicativos**, use **Endereços IP** com o IP de saída do servidor (`curl -4 ifconfig.me`), e não **Sites (referenciadores HTTP)**, porque quem chama a API é o servidor, não o navegador.
+  5. No sistema, em **Administração > Configurações > Vídeos do YouTube**, informe a chave e clique em **Salvar a chave**. Ela é conferida no Google antes de ser salva e fica no banco cifrada, como a senha do e-mail. Não é preciso reiniciar o serviço.
+
+  Os vídeos gravados só com o título e o autor recebem os dados que faltam pelo botão **Atualizar as informações** de cada um. Se a chave parar de funcionar (removida, sem cota no dia), o sistema volta a usar a página e o oEmbed, e o motivo aparece nos registros do serviço.
 - **Avisos por e-mail:** os avisos de vencimento saem de uma tarefa que roda dentro da própria aplicação, por isso o Gunicorn continua com um único processo. Para desligá-los, altere `AVISOS_ATIVOS` para `False` em `config.py` e reinicie o serviço.
 - **CAPTCHA:** o login, o cadastro e o Esqueci minha senha pedem o código de uma imagem gerada no próprio servidor, sem serviço externo. Para desligá-lo, altere `CAPTCHA_ATIVO` para `False` em `config.py` e reinicie o serviço.
 - **Confirmação do e-mail:** com o envio de e-mails configurado em Administração > Configurações (e o serviço reiniciado depois do primeiro salvamento), quem se cadastra recebe um link e só entra depois de confirmar o e-mail. As contas criadas pelo administrador e as que já existiam contam como confirmadas.

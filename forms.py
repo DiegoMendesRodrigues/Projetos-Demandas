@@ -393,6 +393,16 @@ class ConfiguracoesForm(FlaskForm):
     nome_envio = campo_de_texto("Nome Usado no Envio", "Informe o nome usado no envio.")
 
 
+class ChaveDoYoutubeForm(FlaskForm):
+    """A chave da API do YouTube, num formulário separado do envio de e-mails (Configurações)."""
+
+    # Como a senha do SMTP, a chave salva nunca volta para a página.
+    chave = PasswordField(
+        "Chave da API do YouTube",
+        validators=[Optional(), Length(max=100, message="Use no máximo 100 caracteres.")],
+    )
+
+
 class CategoriaForm(FlaskForm):
     nome = StringField(
         "Nome",

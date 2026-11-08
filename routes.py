@@ -33,12 +33,14 @@ from config import FUSO_HORARIO, LIMITE_ANEXOS, TAMANHO_MAXIMO_ANEXO, seguranca_
 from extensions import db, mail, security
 from seguranca import cifrar, decifrar
 import videos
+import youtube
 from youtube import EnderecoInvalido, ErroDeConexao, ErroNasInformacoes
 from icones_grupo import CATEGORIAS_DE_ICONE_GRUPO, ICONES_GRUPO
 from forms import (
     IMAGEM_DA_DESCRICAO,
     AnexoForm,
     CategoriaForm,
+    ChaveDoYoutubeForm,
     ConfiguracoesForm,
     GrupoForm,
     ProjetoForm,
@@ -58,6 +60,7 @@ from models import (
     Anexo,
     Categoria,
     CompartilhamentoDeCategoria,
+    ConfiguracaoDoYoutube,
     ConfiguracaoEmail,
     GrupoDeUsuarios,
     Imagem,
@@ -650,6 +653,20 @@ def video_do_formulario(form, secoes, atual):
     return None, informacoes
 
 
+def aplicar_informacoes(video, dados):
+    """Grava no vídeo o que foi lido no YouTube ou no Vimeo. A leitura parcial (o oEmbed do YouTube,
+    sem a descrição, a data e a duração) mantém esses dados quando o vídeo é o mesmo."""
+    mesmo_video = (video.plataforma or videos.YOUTUBE, video.codigo) == (dados["plataforma"], dados["codigo"])
+    video.endereco_da_miniatura = dados["miniatura"]
+    video.autor = dados["autor"]
+    video.titulo = dados["titulo"]
+    if dados.get("parcial") and mesmo_video:
+        return
+    video.descricao = dados["descricao"]
+    video.duracao = dados["duracao"]
+    video.publicado_em = dados["publicacao"]
+
+
 def gravar_video(tarefa, dados):
     if dados is None:
         tarefa.video = None
@@ -657,15 +674,10 @@ def gravar_video(tarefa, dados):
     if isinstance(dados, VideoDoYoutube):
         return
     video = tarefa.video or VideoDoYoutube()
+    aplicar_informacoes(video, dados)
     video.endereco = dados["endereco"]
     video.plataforma = dados["plataforma"]
     video.codigo = dados["codigo"]
-    video.endereco_da_miniatura = dados["miniatura"]
-    video.autor = dados["autor"]
-    video.titulo = dados["titulo"]
-    video.descricao = dados["descricao"]
-    video.duracao = dados["duracao"]
-    video.publicado_em = dados["publicacao"]
     tarefa.video = video
 
 
@@ -1632,12 +1644,62 @@ def configuracoes():
                     "aviso",
                 )
             return redirect(url_for("principal.quadro"))
+    return pagina_de_configuracoes(form, ChaveDoYoutubeForm(), tem_senha=bool(senha_atual))
+
+
+def pagina_de_configuracoes(form, youtube_form, tem_senha):
     banco_em_uso, aviso_do_banco = descrever_banco()
+    salva = db.session.get(ConfiguracaoDoYoutube, 1)
     return render_template(
-        "configuracoes.html", form=form, tem_senha=bool(senha_atual),
+        "configuracoes.html", form=form, tem_senha=tem_senha, youtube_form=youtube_form,
+        tem_chave_do_youtube=bool(salva and salva.chave),
         sem_hosts_permitidos=not current_app.config.get("HOSTS_PERMITIDOS") and not current_app.debug,
         banco_em_uso=banco_em_uso, aviso_do_banco=aviso_do_banco,
     )
+
+
+@principal.route("/administracao/configuracoes/youtube", methods=["POST"])
+@auth_required()
+def chave_do_youtube():
+    """Salva (conferida no Google) ou remove a chave da API do YouTube."""
+    exigir_administrador()
+    salva = db.session.get(ConfiguracaoDoYoutube, 1)
+    youtube_form = ChaveDoYoutubeForm()
+    if request.form.get("acao") == "remover":
+        if salva is not None:
+            db.session.delete(salva)
+            db.session.commit()
+        flash("Chave da API do YouTube removida.", "sucesso")
+        return redirect(url_for("principal.configuracoes", _anchor="youtube"))
+    if youtube_form.validate_on_submit():
+        chave = (youtube_form.chave.data or "").strip()
+        if not chave:
+            youtube_form.chave.errors.append("Informe a chave da API do YouTube.")
+        else:
+            try:
+                youtube.conferir_chave(chave)
+            except youtube.ChaveRecusada:
+                youtube_form.chave.errors.append(
+                    "O Google recusou esta chave. Confira se ela foi copiada inteira, se a YouTube Data API v3"
+                    " está ativada no projeto e se as restrições da chave aceitam o IP deste servidor."
+                )
+            except (ErroDeConexao, ErroNasInformacoes):
+                # Sem conferir (sem conexão ou sem cota agora): a chave é salva assim mesmo.
+                flash("A chave foi salva, mas não foi possível conferi-la no Google agora.", "aviso")
+            if not youtube_form.chave.errors:
+                salva = salva or ConfiguracaoDoYoutube(id=1)
+                salva.chave = cifrar(chave, current_app.config["SECRET_KEY"])
+                db.session.add(salva)
+                db.session.commit()
+                return redirect(url_for("principal.configuracoes", _anchor="youtube"))
+    email = db.session.get(ConfiguracaoEmail, 1)
+    # formdata=None: o pedido traz só a chave, e o formulário do e-mail volta com os dados salvos.
+    form = ConfiguracoesForm(
+        formdata=None, servidor=email.servidor, porta=str(email.porta),
+        usar_tls="sim" if email.usar_tls else "nao", usuario=email.usuario,
+        email_envio=email.email_envio, nome_envio=email.nome_envio,
+    ) if email else ConfiguracoesForm(formdata=None)
+    return pagina_de_configuracoes(form, youtube_form, tem_senha=bool(email and email.senha))
 
 
 def descrever_banco():
@@ -2117,12 +2179,7 @@ def atualizar_video(tarefa_id):
         return jsonify(erro=mensagem), codigo
 
     video = tarefa.video
-    video.autor = informacoes["autor"]
-    video.titulo = informacoes["titulo"]
-    video.descricao = informacoes["descricao"]
-    video.duracao = informacoes["duracao"]
-    video.publicado_em = informacoes["publicacao"]
-    video.endereco_da_miniatura = informacoes["miniatura"]
+    aplicar_informacoes(video, informacoes)
     tarefa.nome = informacoes["titulo"][:120]
     registrar(tarefa, "atualizou_video")
     db.session.commit()

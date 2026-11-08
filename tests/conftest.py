@@ -12,6 +12,7 @@ from banco import tipo_da_url
 from config import Config
 from extensions import db, security
 from models import Categoria, Projeto, Tarefa
+import youtube
 
 SENHA = "senha-de-teste-123"
 # Com um endereço SQLAlchemy aqui, os testes rodam nesse banco, que é apagado a cada teste:
@@ -37,6 +38,20 @@ class ClienteDeTeste(FlaskClient):
     def open(self, *args, **kwargs):
         g.pop("_login_user", None)
         return super().open(*args, **kwargs)
+
+
+@pytest.fixture(autouse=True)
+def oembed_do_youtube_sem_internet(monkeypatch):
+    """Os testes nunca acessam o oEmbed nem a API do YouTube: por padrão, os dois falham.
+    tests/test_videos.py e tests/test_chave_do_youtube.py os trocam quando precisam."""
+    def recusar(_codigo):
+        raise youtube.ErroNasInformacoes("oEmbed desligado nos testes")
+
+    def sem_api(_codigo, _chave):
+        raise youtube.ErroDeConexao("API desligada nos testes")
+
+    monkeypatch.setattr(youtube, "baixar_oembed", recusar)
+    monkeypatch.setattr(youtube, "baixar_da_api", sem_api)
 
 
 @pytest.fixture

@@ -3300,6 +3300,22 @@ kbd {
   margin-top: 0;
 }
 
+/* A chave da API do YouTube, num formulário próprio abaixo dos botões do e-mail. */
+.configuracoes-youtube {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--borda);
+}
+
+.configuracoes-youtube .subtitulo {
+  margin-top: 0;
+}
+
+.configuracoes-situacao {
+  margin: 8px 0;
+  font-weight: 600;
+}
+
 .configuracoes .perfil-acoes {
   margin-top: 24px;
 }
