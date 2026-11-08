@@ -41,11 +41,20 @@ def test_telas_da_conta_nao_exibem_o_link_voltar_ao_quadro(cliente, url):
     assert "menu-conta" not in html
 
 
-def test_quadro_exige_login(app):
+def test_pagina_inicial_sem_login_e_a_apresentacao(app):
     resposta = app.test_client().get("/")
 
     assert resposta.status_code == 302
-    assert "/login" in resposta.headers["Location"]
+    assert resposta.headers["Location"].endswith("/projetos-e-demandas")
+
+
+def test_quadro_com_parametros_exige_login_e_volta_ao_cartao(app):
+    resposta = app.test_client().get("/?tarefa=5&categoria=2")
+
+    assert resposta.status_code == 302
+    local = resposta.headers["Location"]
+    assert "/login" in local
+    assert "tarefa%3D5" in local and "categoria%3D2" in local
 
 
 def test_api_sem_login_retorna_401(app):
@@ -89,7 +98,7 @@ def test_mensagem_de_acesso_negado_em_portugues(app):
 def test_pagina_inicial_sem_login_nao_exibe_notificacao(app):
     resposta = app.test_client().get("/", follow_redirects=True)
 
-    assert "/login" in resposta.request.path
+    assert resposta.request.path == "/projetos-e-demandas"
     assert "Entre para acessar esta página." not in resposta.get_data(as_text=True)
 
 

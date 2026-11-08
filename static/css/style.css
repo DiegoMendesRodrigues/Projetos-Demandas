@@ -3933,25 +3933,15 @@ kbd {
   }
 }
 
-/* ---------- Área externa (paginas_publicas.py): menu abaixo do cabeçalho, Projetos & Demandas, Planos,
-   Manual e Atendimento. As capturas ficam em static/img/manual/. */
+/* ---------- Área externa (paginas_publicas.py): menu no cabeçalho, à direita do logotipo, e as páginas
+   Projetos & Demandas, Planos, Manual e Atendimento. As capturas ficam em static/img/manual/. */
 .navegacao-publica {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  border-bottom: 1px solid var(--borda);
-  background: var(--superficie);
-  box-shadow: var(--sombra);
-}
-
-.navegacao-publica-conteudo {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px 16px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 8px 16px;
+  margin-left: auto;
 }
 
 .navegacao-publica-itens {
@@ -3966,25 +3956,45 @@ kbd {
   display: block;
   padding: 8px 12px;
   border-radius: 8px;
-  color: var(--texto);
+  color: rgba(255, 255, 255, 0.88);
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
 
+.navegacao-publica-itens strong {
+  font-weight: 800;
+}
+
 .navegacao-publica-itens a:hover {
-  background: var(--superficie-2);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .navegacao-publica-itens a[aria-current="page"] {
-  background: var(--acento-suave);
-  color: var(--acento-texto);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 -2px 0 #ffffff;
+  color: #ffffff;
+}
+
+.navegacao-publica-itens a:focus-visible {
+  outline-color: #ffffff;
 }
 
 .navegacao-publica-conta {
   display: flex;
   flex: none;
   gap: 8px;
+}
+
+.navegacao-publica-entrar {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #ffffff;
+}
+
+.navegacao-publica-entrar:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .publico {
@@ -4361,8 +4371,8 @@ kbd {
 
 .manual-indice {
   position: sticky;
-  top: 72px;
-  max-height: calc(100vh / var(--escala) - 96px);
+  top: 16px;
+  max-height: calc(100vh / var(--escala) - 32px);
   overflow-y: auto;
   padding: 16px;
   border: 1px solid var(--borda);
@@ -4413,7 +4423,7 @@ kbd {
 .manual-secao {
   padding: 8px 0 32px;
   border-bottom: 1px solid var(--borda);
-  scroll-margin-top: 72px;
+  scroll-margin-top: 16px;
 }
 
 .manual-secao + .manual-secao {
@@ -4657,18 +4667,22 @@ kbd {
 }
 
 @media (max-width: 640px) {
-  /* O menu rola para os lados, como a faixa de categorias; Entrar e Criar conta descem para a linha de baixo. */
-  .navegacao-publica {
-    position: static;
+  /* O cabeçalho ganha uma segunda linha: o menu rola para os lados, como a faixa de categorias, e
+     Entrar e Criar conta ficam lado a lado embaixo. .topo.topo-publico vence o nowrap do bloco final. */
+  .topo.topo-publico {
+    flex-wrap: wrap;
   }
 
-  .navegacao-publica-conteudo {
-    flex-wrap: wrap;
-    padding: 6px 12px;
+  .navegacao-publica {
+    flex: 1 1 100%;
+    order: 3;
+    min-width: 0;
+    margin-left: 0;
   }
 
   .navegacao-publica-itens {
     flex: 1 1 100%;
+    min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
   }

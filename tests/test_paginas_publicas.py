@@ -60,9 +60,18 @@ def test_menu_tem_os_quatro_itens_e_marca_a_pagina_atual(app, endereco, rotulo):
     html = app.test_client().get(endereco).get_data(as_text=True)
     menu = html.split('class="navegacao-publica-itens"')[1].split("</ul>")[0]
 
-    rotulos = re.findall(r">([^<]+)</a>", menu)
+    rotulos = re.findall(r">(?:<strong>)?([^<]+)(?:</strong>)?</a>", menu)
     assert rotulos == ["Projetos &amp; Demandas", "Planos", "Manual", "Atendimento"]
-    assert re.findall(r'aria-current="page">([^<]+)<', menu) == [rotulo.replace("&", "&amp;")]
+    assert re.findall(r'aria-current="page">(?:<strong>)?([^<]+)<', menu) == [rotulo.replace("&", "&amp;")]
+
+
+@pytest.mark.parametrize("endereco", [*PAGINAS, "/login"])
+def test_menu_fica_no_cabecalho_a_direita_do_logotipo(app, endereco):
+    html = app.test_client().get(endereco).get_data(as_text=True)
+    cabecalho = html.split('<header class="topo topo-publico">')[1].split("</header>")[0]
+
+    assert cabecalho.index('class="marca"') < cabecalho.index('class="navegacao-publica"')
+    assert html.count('class="navegacao-publica"') == 1
 
 
 def test_menu_publico_na_ordem_pedida():
@@ -74,14 +83,62 @@ def test_visitante_ve_entrar_e_criar_conta(app):
 
     assert ">Entrar</a>" in html
     assert ">Criar conta</a>" in html
-    assert "Ir para o quadro" not in html
+    assert 'class="topo-acoes"' not in html
 
 
-def test_quem_esta_logado_ve_o_link_para_o_quadro(cliente):
-    html = cliente.get("/manual").get_data(as_text=True)
+@pytest.mark.parametrize("endereco", PAGINAS)
+def test_quem_esta_logado_fica_com_o_cabecalho_da_area_interna_e_sem_rodape(cliente, endereco):
+    html = cliente.get(endereco).get_data(as_text=True)
+    interno = cliente.get("/perfil").get_data(as_text=True)
 
-    assert "Ir para o quadro" in html
-    assert ">Entrar</a>" not in html
+    assert html.split("</header>")[0].split("<header")[1] == interno.split("</header>")[0].split("<header")[1]
+    assert 'class="navegacao-publica"' not in html
+    assert 'class="publico-rodape"' not in html
+    assert 'class="topo-acoes"' in html
+
+
+@pytest.mark.parametrize("endereco", PAGINAS)
+def test_visitante_ve_o_rodape(app, endereco):
+    assert 'class="publico-rodape"' in app.test_client().get(endereco).get_data(as_text=True)
+
+
+@pytest.mark.parametrize("endereco", ["/", "/perfil", "/meu-dia"])
+def test_menu_do_usuario_leva_ao_manual_e_ao_atendimento(cliente, endereco):
+    html = cliente.get(endereco).get_data(as_text=True)
+    menu = html.split('id="menu-usuario"')[1].split("</div>")[0]
+
+    senha = menu.index("Alterar a Senha</a>")
+    manual = menu.index('href="/manual"')
+    atendimento = menu.index('href="/atendimento"')
+    assert senha < manual < atendimento < menu.index("Sair</button>")
+    assert ">Manual</a>" in menu.replace("</svg>", ">") and "Atendimento</a>" in menu
+
+
+@pytest.mark.parametrize("endereco", PAGINAS)
+def test_nome_do_sistema_em_negrito_nas_paginas_publicas(app, endereco):
+    html = app.test_client().get(endereco).get_data(as_text=True)
+    corpo = re.sub(r"<title>.*?</title>|<!--.*?-->", "", html, flags=re.S)
+    # O nome do cabeçalho (.marca-nome) e o do rodapé têm o "&" em verde e já são negrito.
+    corpo = corpo.replace('Projetos <span class="marca-e">&amp;</span> Demandas', "")
+    corpo = re.sub(r'="[^"]*"', '=""', corpo)
+
+    assert "Projetos &amp; Demandas" in corpo
+    assert corpo.count("Projetos &amp; Demandas") == corpo.count("<strong>Projetos &amp; Demandas</strong>")
+
+
+def test_atendimento_preenche_os_dados_de_quem_esta_logado(cliente):
+    from models import Usuario
+
+    usuario = db.session.get(Usuario, cliente.usuario_id)
+    usuario.nome = "Ana Lima"
+    usuario.telefone = "(11) 91234-5678"
+    db.session.commit()
+
+    html = cliente.get("/atendimento").get_data(as_text=True)
+
+    assert 'value="Ana Lima"' in html
+    assert 'value="ana@exemplo.com"' in html
+    assert 'value="(11) 91234-5678"' in html
 
 
 def test_login_e_cadastro_mostram_o_menu_so_para_visitantes(app, cliente):
@@ -201,7 +258,7 @@ def test_manual_tem_o_indice_e_as_secoes(app):
     assert len(ancoras) >= 15
     for ancora in ancoras:
         assert f'id="{ancora}"' in html
-    for nome in ("menu-criar", "demanda", "lista-de-tarefas", "generalista", "video", "meu-dia", "calendario", "perfil", "atalhos"):
+    for nome in ("menu-criar", "demanda", "lista-de-tarefas", "contexto", "video", "meu-dia", "calendario", "perfil", "atalhos"):
         assert f"img/manual/{nome}.webp" in html
 
 
@@ -213,6 +270,7 @@ def test_paginas_publicas_usam_o_vocabulario_da_interface(app, endereco):
     texto = re.sub(r"listas? de tarefas", "", texto_visivel(html), flags=re.I)
 
     assert not re.search(r"atividade", texto, re.I)
+    assert not re.search(r"generalista", texto, re.I)
     assert not re.search(r"tarefa", texto, re.I)
     assert not re.search(r"\blistas?\b", texto, re.I)
 

@@ -1,4 +1,4 @@
-{% from "_icones.html" import ajustes, avatar, icone_do_usuario, chave, engrenagem, etiqueta, icone_categoria, instalar, pessoa, sair, sino, usuarios -%}
+{% from "_icones.html" import ajustes, avatar, balao, icone_do_usuario, chave, engrenagem, etiqueta, icone_categoria, instalar, livro, pessoa, sair, sino, usuarios -%}
 <!DOCTYPE html>
 <!-- Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -->
 <!-- Desenvolvido por Diego Mendes Rodrigues -->
@@ -19,11 +19,13 @@
   <link rel="stylesheet" href="{{ estatico('css/style.css') }}">
 </head>
 <body>
-  <header class="topo">
+  <header class="topo{% block classe_do_topo %}{% endblock %}">
     <a class="marca" href="{{ url_for('principal.quadro') if current_user.is_authenticated else url_for('publico.apresentacao') }}" data-dica="Ir para a página inicial">
       <img class="marca-logo" src="{{ estatico('img/icone_cabecalho.png') }}" alt="" width="87" height="60">
       <span class="marca-nome">Projetos <span class="marca-e">&amp;</span> Demandas</span>
     </a>
+    {#- Área externa: o menu das páginas públicas, à direita do logotipo (_navegacao_publica.html). #}
+    {%- block navegacao %}{% endblock %}
     {% if current_user.is_authenticated %}
       <div class="topo-acoes">
         <div class="menu">
@@ -64,6 +66,8 @@
           <div class="menu-caixa" id="menu-usuario" hidden>
             <a class="menu-item" href="{{ url_for('principal.perfil') }}">{{ pessoa() }}Meu Perfil</a>
             <a class="menu-item" href="{{ url_for_security('change_password') }}">{{ chave() }}Alterar a Senha</a>
+            <a class="menu-item" href="{{ url_for('publico.manual') }}">{{ livro() }}Manual</a>
+            <a class="menu-item" href="{{ url_for('publico.atendimento') }}">{{ balao() }}Atendimento</a>
             <button class="menu-item" type="button" data-instalar-app hidden>{{ instalar() }}Instalar o aplicativo</button>
             <form action="{{ url_for_security('logout') }}" method="post">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -74,7 +78,6 @@
       </div>
     {% endif %}
   </header>
-  {%- block navegacao %}{% endblock %}
 
   <main>
     {% block main %}{% endblock %}

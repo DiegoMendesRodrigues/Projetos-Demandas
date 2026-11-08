@@ -1,6 +1,7 @@
 {# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
 {# Desenvolvido por Diego Mendes Rodrigues -#}
 {% extends "base.html" %}
+{% block classe_do_topo %}{% if not current_user.is_authenticated %} topo-publico{% endif %}{% endblock %}
 {% block navegacao %}{% if not current_user.is_authenticated %}{% include "_navegacao_publica.html" %}{% endif %}{% endblock %}
 {% block main %}
   <div class="cartao-central formulario-conta">

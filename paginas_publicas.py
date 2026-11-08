@@ -7,8 +7,9 @@ que envia um e-mail com a configuração de Administração > Configurações).
 """
 import logging
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_mail import Message
+from flask_login import current_user
 
 from extensions import mail
 from forms import AtendimentoForm
@@ -105,6 +106,11 @@ def manual():
 @publico.route("/atendimento", methods=["GET", "POST"])
 def atendimento():
     form = AtendimentoForm()
+    # Quem chega pelo menu do usuário já tem o nome, o e-mail e o telefone preenchidos.
+    if request.method == "GET" and current_user.is_authenticated:
+        form.nome.data = current_user.nome
+        form.email.data = current_user.email
+        form.telefone.data = current_user.telefone
     if form.validate_on_submit():
         # Campo invisível para pessoas: preenchido, é um robô. Ele vê a mesma resposta.
         if form.site.data:

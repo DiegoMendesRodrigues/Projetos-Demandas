@@ -13,7 +13,7 @@
   ("cartoes", "Tipos de cartão"),
   ("demanda", "Demanda"),
   ("lista-de-tarefas", "Lista de tarefas"),
-  ("generalista", "Cartão generalista"),
+  ("cartao-de-contexto", "Cartão de contexto"),
   ("videos", "Vídeos"),
   ("organizar", "Arrastar, concluir e ocultar"),
   ("pesquisar", "Pesquisar"),
@@ -29,7 +29,7 @@
 {% block conteudo %}
   <section class="publico-cabecalho" aria-labelledby="manual-titulo">
     <p class="publico-sobretitulo">Manual</p>
-    <h1 id="manual-titulo">Como usar o Projetos &amp; Demandas</h1>
+    <h1 id="manual-titulo">Como usar o <strong>Projetos &amp; Demandas</strong></h1>
     <p class="publico-lead">Um guia direto, do primeiro acesso aos recursos de equipe. As imagens são do sistema
       em uso: clique em qualquer uma para ver no tamanho original.</p>
   </section>
@@ -48,7 +48,7 @@
       <section id="primeiros-passos" class="manual-secao">
         <h2>Primeiros passos</h2>
         <ol class="manual-passos">
-          <li>Clique em <strong>Criar conta</strong>, no menu acima, e informe o nome, o e-mail e uma senha. O telefone é opcional.</li>
+          <li>Clique em <strong>Criar conta</strong>, no alto da página, e informe o nome, o e-mail e uma senha. O telefone é opcional.</li>
           <li>A senha precisa ter pelo menos 10 caracteres e não pode ser fácil de adivinhar. Misture palavras, números e símbolos.</li>
           <li>Se o envio de e-mails estiver ligado, abra o link que chega na sua caixa de entrada para confirmar o endereço.</li>
           <li>Para entrar, use <strong>Entrar</strong>, informe o e-mail, a senha e o código da imagem. Marque <strong>Lembrar de mim</strong> no seu próprio aparelho para não precisar entrar de novo por 60 dias.</li>
@@ -99,9 +99,9 @@
       <section id="cartoes" class="manual-secao">
         <h2>Tipos de cartão</h2>
         <p>O <strong>+</strong> no cabeçalho de cada projeto abre o menu de criação, com quatro tipos de cartão.</p>
-        {{ captura("menu-criar", "Menu de criação aberto no projeto Pendentes, com os quatro tipos de cartão", "Generalista, Demanda, Lista de Tarefas e Vídeo.") }}
+        {{ captura("menu-criar", "Menu de criação aberto no projeto Pendentes, com os quatro tipos de cartão", "Contexto, Demanda, Lista de Tarefas e Vídeo.") }}
         <dl class="manual-definicoes">
-          <dt>Generalista</dt><dd>Você escolhe as seções do cartão: arquivos, descrição, checklist e vídeo.</dd>
+          <dt>Contexto</dt><dd>Você escolhe as seções do cartão: arquivos, descrição, checklist e vídeo.</dd>
           <dt>Demanda</dt><dd>O cartão clássico, com descrição formatada e arquivos.</dd>
           <dt>Lista de Tarefas</dt><dd>Um checklist com itens que se marcam, se reordenam e mostram o progresso.</dd>
           <dt>Vídeo</dt><dd>Um vídeo do YouTube ou do Vimeo, com os dados e o player.</dd>
@@ -135,11 +135,11 @@
         </ul>
       </section>
 
-      <section id="generalista" class="manual-secao">
-        <h2>Cartão generalista</h2>
+      <section id="cartao-de-contexto" class="manual-secao">
+        <h2>Cartão de contexto</h2>
         <p>Começa com os campos da demanda (nome, prioridade, previsão, local e marcações). Em
           <strong>Adicionar ao cartão</strong>, você acrescenta as seções de que precisa.</p>
-        {{ captura("generalista", "Cartão generalista com a descrição, o checklist e o vídeo em abas", "Descrição, checklist e vídeo ficam em abas, à direita.") }}
+        {{ captura("contexto", "Cartão de contexto com a descrição, o checklist e o vídeo em abas", "Descrição, checklist e vídeo ficam em abas, à direita.") }}
         <ul class="manual-itens">
           <li>Retire uma seção pelo <strong>×</strong>. Ao salvar, o conteúdo dela é apagado.</li>
           <li>A seção Arquivos só sai depois que os arquivos forem excluídos.</li>
@@ -219,7 +219,8 @@
 
       <section id="perfil" class="manual-secao">
         <h2>Meu Perfil e avisos</h2>
-        <p>Abra o seu ícone, no canto superior direito, e escolha <strong>Meu Perfil</strong>.</p>
+        <p>Abra o seu ícone, no canto superior direito, e escolha <strong>Meu Perfil</strong>. No mesmo menu ficam
+          <strong>Alterar a Senha</strong>, este <strong>Manual</strong> e o <strong>Atendimento</strong>, para falar com a nossa equipe.</p>
         {{ captura("perfil", "Página Meu Perfil com o resumo da semana, os dados, a cor da aplicação, o ícone e a automação", altura=770) }}
         <ul class="manual-itens">
           <li><strong>Resumo da semana:</strong> concluídas nesta semana e na anterior, atrasadas e previstas para 7 dias.</li>

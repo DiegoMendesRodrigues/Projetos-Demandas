@@ -930,9 +930,12 @@ def versao_do_quadro():
 
 @principal.route("/")
 def quadro():
-    # Quem abre a página inicial sem login vai ao login, sem notificação de acesso negado.
+    # Sem login, a página inicial é a apresentação da área externa (Projetos & Demandas). O endereço
+    # com parâmetros (o link de um cartão, como nos e-mails de aviso) vai ao login e volta ao cartão.
     if not current_user.is_authenticated:
-        return redirect(url_for_security("login", next=url_for("principal.quadro")))
+        if not request.args:
+            return redirect(url_for("publico.apresentacao"))
+        return redirect(url_for_security("login", next=url_for("principal.quadro", **request.args)))
 
     categoria_selecionada, permissao = categoria_do_quadro()
 

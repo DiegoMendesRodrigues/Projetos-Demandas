@@ -143,7 +143,8 @@ def test_sair_continua_possivel_sem_trocar_a_senha(conta_inicial):
     _, cliente = conta_inicial
 
     assert cliente.post("/logout").status_code == 302
-    assert cliente.get("/").headers["Location"].startswith("/login")
+    # Fora da conta, a página inicial é a apresentação da área externa.
+    assert cliente.get("/").headers["Location"] == "/projetos-e-demandas"
 
 
 def criar_banco_sem_a_coluna(arquivo, email, senha):

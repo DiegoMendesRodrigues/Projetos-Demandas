@@ -1,9 +1,11 @@
 # Projetos & Demandas | Solução on-line para a gestão de projetos e demandas
 # Desenvolvido por Diego Mendes Rodrigues
-"""Cartão generalista: os campos iniciais da demanda e as seções Arquivos, Descrição, Lista de Tarefas e Vídeo."""
+"""Cartão de contexto (tipo "generalista" no código): os campos iniciais da demanda e as seções Arquivos, Descrição, Lista de Tarefas e Vídeo."""
 import json
+import re
 from datetime import date
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from sqlalchemy import inspect, text
@@ -83,7 +85,7 @@ def test_menu_do_mais_comeca_pelo_generalista(cliente, criar_projeto):
     html = cliente.get("/").get_data(as_text=True)
     menu = html.split('id="menu-criar-{}"'.format(projeto.id))[1].split("</div>")[0]
 
-    primeiro = menu.index(">Cartão - Generalista</button>")
+    primeiro = menu.index(">Cartão - Contexto</button>")
     assert 'data-nova-tarefa data-tipo="generalista"' in menu
     assert primeiro < menu.index(">Cartão - Demanda</button>") < menu.index(">Cartão - Vídeo</button>")
 
@@ -381,3 +383,21 @@ def test_app_mostra_uma_secao_por_aba_so_no_generalista():
     # Acrescentar uma seção abre a aba dela, e as setas trocam de aba.
     assert "abaDoDialogo = secao;" in codigo.split("function acrescentarSecao")[1].split("\n  }\n")[0]
     assert "ArrowRight" in codigo and "ArrowLeft" in codigo
+
+
+def test_interface_diz_cartao_de_contexto_e_nao_generalista(cliente, criar_projeto):
+    """O tipo continua "generalista" no código e no banco; na interface, é o cartão de contexto."""
+    criar_projeto(cliente.usuario_id)
+
+    html = cliente.get("/").get_data(as_text=True)
+    sem_comentarios = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    textos = re.sub(r"<[^>]*>", " ", sem_comentarios)
+    atributos = re.findall(r'(?:data-dica[\w-]*|aria-label|title|alt|placeholder)="([^"]*)"', sem_comentarios)
+    javascript = Path("static/js/app.js").read_text(encoding="utf-8")
+
+    assert ">Cartão - Contexto</button>" in html
+    assert not re.search(r"generalista", textos + " ".join(atributos), re.I)
+    # Textos do JavaScript (os que têm espaço); "generalista" e "tarefa-generalista" são nomes internos.
+    frases = [texto for texto in re.findall(r'"([^"\n]*)"', javascript) if " " in texto]
+    assert not [frase for frase in frases if re.search(r"generalista", frase, re.I)]
+    assert '"Editar cartão de contexto"' in javascript

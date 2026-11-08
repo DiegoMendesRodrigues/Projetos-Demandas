@@ -266,7 +266,7 @@ data-url="{{ url_for('principal.editar_video' if tarefa.e_video else 'principal.
                 <button class="botao-icone" type="button" data-menu-gatilho aria-controls="menu-criar-{{ projeto.id }}" aria-expanded="false" aria-haspopup="true"
                         aria-label="Criar um cartão em {{ projeto.nome }}" data-dica="Criar um cartão">{{ mais() }}</button>
                 <div class="menu-caixa menu-criar" id="menu-criar-{{ projeto.id }}" hidden>
-                  <button class="menu-item" type="button" data-nova-tarefa data-tipo="generalista" data-projeto-id="{{ projeto.id }}">Cartão - Generalista</button>
+                  <button class="menu-item" type="button" data-nova-tarefa data-tipo="generalista" data-projeto-id="{{ projeto.id }}">Cartão - Contexto</button>
                   <button class="menu-item" type="button" data-nova-tarefa data-tipo="atividade" data-projeto-id="{{ projeto.id }}">Cartão - Demanda</button>
                   <button class="menu-item" type="button" data-nova-tarefa data-tipo="lista_de_tarefas" data-projeto-id="{{ projeto.id }}">Cartão - Lista de Tarefas</button>
                   <button class="menu-item" type="button" data-novo-video data-projeto-id="{{ projeto.id }}">Cartão - Vídeo</button>

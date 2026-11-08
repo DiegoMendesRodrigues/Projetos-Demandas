@@ -273,7 +273,7 @@
   });
 
   const TITULOS_DA_TAREFA = {
-    generalista: { nova: "Novo cartão generalista", editar: "Editar cartão generalista", ver: "Cartão generalista" },
+    generalista: { nova: "Novo cartão de contexto", editar: "Editar cartão de contexto", ver: "Cartão de contexto" },
     atividade: { nova: "Nova demanda", editar: "Editar demanda", ver: "Demanda" },
     lista_de_tarefas: { nova: "Nova lista de tarefas", editar: "Editar lista de tarefas", ver: "Lista de tarefas" },
   };

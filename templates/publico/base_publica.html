@@ -1,21 +1,26 @@
 {# Projetos & Demandas | Solução on-line para a gestão de projetos e demandas -#}
 {# Desenvolvido por Diego Mendes Rodrigues -#}
-{#- Base das páginas da área externa: o menu de navegação abaixo do cabeçalho e o rodapé com os mesmos links. #}
+{#- Base das páginas da área externa. O visitante vê o menu no cabeçalho e o rodapé com os mesmos links;
+    quem está logado (pelo menu do usuário: Manual e Atendimento) fica com o cabeçalho da área interna, sem
+    o menu e sem o rodapé. #}
 {% extends "base.html" %}
-{% block navegacao %}{% include "_navegacao_publica.html" %}{% endblock %}
+{% block classe_do_topo %}{% if not current_user.is_authenticated %} topo-publico{% endif %}{% endblock %}
+{% block navegacao %}{% if not current_user.is_authenticated %}{% include "_navegacao_publica.html" %}{% endif %}{% endblock %}
 {% block main %}
   <div class="publico">
     {% block conteudo %}{% endblock %}
   </div>
+  {% if not current_user.is_authenticated %}
   <footer class="publico-rodape">
     <div class="publico-rodape-conteudo">
-      <p class="publico-rodape-marca">Projetos <span class="marca-e">&amp;</span> Demandas</p>
+      <p class="publico-rodape-marca"><strong>Projetos <span class="marca-e">&amp;</span> Demandas</strong></p>
       <ul>
         {% for endpoint, rotulo in menu_publico %}
-          <li><a href="{{ url_for(endpoint) }}">{{ rotulo }}</a></li>
+          <li><a href="{{ url_for(endpoint) }}">{% if endpoint == 'publico.apresentacao' %}<strong>{{ rotulo }}</strong>{% else %}{{ rotulo }}{% endif %}</a></li>
         {% endfor %}
       </ul>
       <p class="publico-rodape-texto">Solução on-line para a gestão de projetos e demandas.</p>
     </div>
   </footer>
+  {% endif %}
 {% endblock %}
